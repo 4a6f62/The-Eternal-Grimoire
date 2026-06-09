@@ -103,8 +103,9 @@ function App() {
           )}
         </section>
 
-        <footer className="mt-16 pt-6 border-t-2 border-dnd-gold/30 text-center text-sm text-ink/40 font-serif italic">
-          Forge your legend.
+        <footer className="mt-16 pt-6 border-t-2 border-dnd-gold/30 text-center text-sm text-ink/40 font-serif italic flex justify-between items-center px-4">
+          <span>Forge your legend.</span>
+          <span className="text-[10px] uppercase tracking-widest opacity-30">v0.2.0-3column</span>
         </footer>
       </main>
     </div>
