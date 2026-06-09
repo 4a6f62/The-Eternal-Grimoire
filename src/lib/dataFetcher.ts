@@ -2,7 +2,7 @@ import { db } from './db';
 
 const FIVE_ETOOLS_BASE_URL = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data';
 
-export async function fetchAndCache5eData(type: 'class' | 'race' | 'spells' | 'items') {
+export async function fetchAndCache5eData(type: 'class' | 'race' | 'spells' | 'items' | 'feats') {
   let url = '';
   switch (type) {
     case 'class':
@@ -11,9 +11,13 @@ export async function fetchAndCache5eData(type: 'class' | 'race' | 'spells' | 'i
     case 'race':
       url = `${FIVE_ETOOLS_BASE_URL}/races.json`;
       break;
+    case 'feats':
+      url = `${FIVE_ETOOLS_BASE_URL}/feats.json`;
+      break;
     default:
       return;
   }
+
 
   try {
     const response = await fetch(url);
@@ -45,16 +49,49 @@ export async function fetchAndCache5eData(type: 'class' | 'race' | 'spells' | 'i
       await db.fiveetools.bulkPut(races);
     }
 
+    if (type === 'feats') {
+      const feats = data.feat.map((f: any) => ({
+        id: `feat:${f.name.toLowerCase().replace(/\s+/g, '-')}`,
+        type: 'feat' as const,
+        name: f.name,
+        data: f
+      }));
+      await db.fiveetools.bulkPut(feats);
+    }
+
     if (type === 'class') {
       const classes = Object.keys(data).map(key => ({
           id: `class:${key.toLowerCase()}`,
           type: 'class' as const,
-          name: key,
-          data: data[key]
+          name: key.charAt(0).toUpperCase() + key.slice(1),
+          data: { filename: data[key] }
       }));
       await db.fiveetools.bulkPut(classes);
     }
   } catch (err) {
     console.error(`Failed to fetch 5etools ${type} data`, err);
+  }
+}
+
+export async function fetchClassDetails(className: string, filename: string) {
+  const url = `${FIVE_ETOOLS_BASE_URL}/class/${filename}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
+    const data = await response.json();
+    
+    // Update the class entry in the DB with full data
+    const existing = await db.fiveetools.get(`class:${className.toLowerCase()}`);
+    if (existing && !existing.data.fullData) {
+      await db.fiveetools.put({
+        ...existing,
+        data: { ...existing.data, fullData: data }
+      });
+      console.log(`Successfully cached detailed data for ${className}`);
+    }
+    return data;
+  } catch (err) {
+    console.error(`Failed to fetch class details for ${className}`, err);
+    return null;
   }
 }

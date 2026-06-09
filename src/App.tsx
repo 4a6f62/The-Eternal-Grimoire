@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './lib/db';
 import { CharacterBuilder } from './components/builder/CharacterBuilder';
 import { CharacterSheet } from './components/sheet/CharacterSheet';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit3 } from 'lucide-react';
 import type { CharacterType } from './lib/schemas';
 
 function App() {
@@ -18,15 +18,31 @@ function App() {
     }
   };
 
+  const handleEdit = (e: React.MouseEvent, char: CharacterType) => {
+    e.stopPropagation();
+    editCharacter(char);
+  };
+
   const openCharacter = (char: CharacterType) => {
     setSelectedCharacter(char);
     setView('sheet');
   };
 
+  const editCharacter = (char: CharacterType) => {
+    setSelectedCharacter(char);
+    setView('builder');
+  };
+
   if (view === 'builder') {
     return (
       <div className="min-h-screen p-8 flex justify-center items-start parchment-texture">
-        <CharacterBuilder onComplete={() => setView('dashboard')} />
+        <CharacterBuilder 
+          editingCharacter={selectedCharacter} 
+          onComplete={() => {
+            setSelectedCharacter(null);
+            setView('dashboard');
+          }} 
+        />
       </div>
     );
   }
@@ -34,7 +50,11 @@ function App() {
   if (view === 'sheet' && selectedCharacter) {
     return (
       <div className="min-h-screen p-8 flex justify-center items-start parchment-texture">
-        <CharacterSheet character={selectedCharacter} onBack={() => setView('dashboard')} />
+        <CharacterSheet 
+          character={selectedCharacter} 
+          onBack={() => setView('dashboard')} 
+          onEdit={() => editCharacter(selectedCharacter)}
+        />
       </div>
     );
   }
@@ -64,6 +84,12 @@ function App() {
                 className="border border-border-sepia p-6 bg-parchment-base relative group cursor-pointer hover:shadow-lg transition-all"
               >
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <button 
+                    onClick={(e) => handleEdit(e, char as CharacterType)}
+                    className="text-dnd-gold hover:text-ink cursor-pointer p-1"
+                   >
+                     <Edit3 size={20} />
+                   </button>
                    <button 
                     onClick={(e) => deleteCharacter(e, char.id)}
                     className="text-dnd-red hover:text-ink cursor-pointer p-1"

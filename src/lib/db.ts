@@ -6,6 +6,9 @@ export interface Character {
   level: number;
   race: string;
   class: string;
+  subclass?: string;
+  size: string;
+  alignment: string;
   hp: {
     current: number;
     max: number;
@@ -19,6 +22,9 @@ export interface Character {
     wisdom: number;
     charisma: number;
   };
+  proficiencies: string[];
+  traits: any[];
+  feats: any[];
   inventory: any[];
   spells: any[];
   resources: Record<string, any>;
