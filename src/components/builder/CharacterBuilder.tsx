@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../../lib/db';
 import { CharacterSchema } from '../../lib/schemas';
 import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { fetchAndCache5eData } from '../../lib/dataFetcher';
 
 type Step = 'Basics' | 'Abilities' | 'Proficiencies' | 'Equipment' | 'Review';
 
@@ -28,6 +30,14 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
     resources: {},
   });
 
+  const races = useLiveQuery(() => db.fiveetools.where('type').equals('race').toArray());
+  const classes = useLiveQuery(() => db.fiveetools.where('type').equals('class').toArray());
+
+  useEffect(() => {
+    fetchAndCache5eData('race');
+    fetchAndCache5eData('class');
+  }, []);
+
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 
@@ -50,10 +60,10 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
       case 'Basics':
         return (
           <div className="space-y-4">
-            <h2 className="text-3xl border-b border-fel-green mb-4 text-fel-green">Initiation Ritual</h2>
+            <h2 className="text-3xl border-b border-fel-green mb-4 text-fel-green">Character Basics</h2>
             <div className="grid grid-cols-1 gap-4">
               <div className="flex flex-col">
-                <label className="text-sm font-bold uppercase text-bone/50">Mortal Designation</label>
+                <label className="text-sm font-bold uppercase text-bone/50">Character Name</label>
                 <input
                   type="text"
                   className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone focus:outline-none focus:ring-2 focus:ring-fel-green"
@@ -64,24 +74,30 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col">
-                  <label className="text-sm font-bold uppercase text-bone/50">Ancestry</label>
-                  <input
-                    type="text"
+                  <label className="text-sm font-bold uppercase text-bone/50">Race</label>
+                  <select
                     className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone"
                     value={formData.race}
                     onChange={(e) => setFormData({ ...formData, race: e.target.value })}
-                    placeholder="e.g. Undead"
-                  />
+                  >
+                    <option value="">Select Race...</option>
+                    {races?.map(r => (
+                      <option key={r.id} value={r.name}>{r.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-sm font-bold uppercase text-bone/50">Vocation</label>
-                  <input
-                    type="text"
+                  <label className="text-sm font-bold uppercase text-bone/50">Class</label>
+                  <select
                     className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone"
                     value={formData.class}
                     onChange={(e) => setFormData({ ...formData, class: e.target.value })}
-                    placeholder="e.g. Oathbreaker"
-                  />
+                  >
+                    <option value="">Select Class...</option>
+                    {classes?.map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
