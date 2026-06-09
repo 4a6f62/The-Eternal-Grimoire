@@ -245,11 +245,6 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
         const classFeatureData = selectedClassData?.data?.fullData?.classFeature || [];
         const subclassFeatureData = selectedClassData?.data?.fullData?.subclassFeature || [];
         
-        let selectedSubclassData: any = null;
-        if (formData.subclass) {
-            selectedSubclassData = selectedClassData?.data?.fullData?.subclass?.find((sc: any) => sc.name === formData.subclass);
-        }
-
         const rawFeatures = [...classFeatureData, ...subclassFeatureData].filter(f => f.level <= formData.level);
         const asiCount = rawFeatures.filter(f => f.name === 'Ability Score Improvement').length;
         const totalFeatSlots = (hasFeatRequirement ? 1 : 0) + asiCount;
@@ -601,9 +596,9 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
         const classFeatureData = selectedClassData?.data?.fullData?.classFeature || [];
         const subclassFeatureData = selectedClassData?.data?.fullData?.subclassFeature || [];
         
-        let selectedSubclassData: any = null;
-        if (formData.subclass) {
-            selectedSubclassData = selectedClassData?.data?.fullData?.subclass?.find((sc: any) => sc.name === formData.subclass);
+        let _selectedSubclassData: any = null;
+        if (formData.subclass && selectedClassData?.data?.fullData?.subclass) {
+            _selectedSubclassData = selectedClassData.data.fullData.subclass.find((sc: any) => sc.name === formData.subclass);
         }
 
         let rawClassFeatures = classFeatureData
@@ -613,9 +608,9 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
             desc: extractDesc(f)
           }));
 
-        if (selectedSubclassData) {
+        if (_selectedSubclassData?.shortName) {
             const scFeatures = subclassFeatureData
-              .filter((f: any) => f.level <= formData.level && f.subclassShortName === selectedSubclassData.shortName)
+              .filter((f: any) => f.level <= formData.level && f.subclassShortName === _selectedSubclassData.shortName)
               .map((f: any) => ({
                   name: cleanText(f.name),
                   desc: extractDesc(f)
