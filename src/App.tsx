@@ -44,14 +44,14 @@ function App() {
       <main className="max-w-4xl w-full bg-[#1a0f2e] p-12 book-shadow bone-border relative border-necrotic-purple">
         <header className="border-b-2 border-fel-green pb-4 mb-8 flex justify-between items-end">
           <div>
-            <h1 className="text-5xl uppercase tracking-tighter text-fel-green">The Eternal Grimoire</h1>
-            <p className="text-xl italic text-bone opacity-80">Chronicles of the Shadow-Bound</p>
+            <h1 className="text-5xl uppercase tracking-tighter text-fel-green">Character Manager</h1>
+            <p className="text-xl italic text-bone opacity-80">Dungeons & Dragons 5e</p>
           </div>
           <button 
             onClick={() => setView('builder')}
             className="bg-necrotic-purple text-bone px-4 py-2 flex items-center gap-2 font-bold uppercase hover:bg-fel-green hover:text-abyssal-black transition-all cursor-pointer border border-fel-green/50"
           >
-            <Plus size={20} /> Bind New Soul
+            <Plus size={20} /> New Character
           </button>
         </header>
 
@@ -92,19 +92,19 @@ function App() {
                 </div>
 
                 <button className="w-full border border-fel-green py-1 text-xs uppercase font-bold group-hover:bg-fel-green group-hover:text-abyssal-black transition-colors">
-                  Consult Tome
+                  Open Sheet
                 </button>
               </div>
             ))
           ) : (
             <div className="col-span-2 text-center py-20 border-2 border-dashed border-necrotic-purple/50 text-bone/50 italic">
-              No souls bound yet. Initiate a new ritual to begin.
+              No characters found.
             </div>
           )}
         </section>
 
         <footer className="mt-12 pt-4 border-t border-fel-green/30 text-center text-sm text-bone/40">
-          Woven in the shadows of the Eternal Forge.
+          Built for the 5th Edition.
         </footer>
       </main>
     </div>
