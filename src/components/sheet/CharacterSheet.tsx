@@ -13,26 +13,26 @@ export function CharacterSheet({ character, onBack }: Props) {
   };
 
   return (
-    <div className="max-w-4xl w-full bg-parchment-dark p-8 md:p-12 book-shadow gold-border relative parchment-texture">
+    <div className="max-w-4xl w-full bg-[#1a0f2e] p-8 md:p-12 book-shadow bone-border relative parchment-texture border-necrotic-purple">
       <button 
         onClick={onBack}
-        className="absolute top-4 left-4 text-dnd-red hover:text-deep-brown flex items-center gap-1 font-bold uppercase text-xs cursor-pointer no-print"
+        className="absolute top-4 left-4 text-fel-green hover:text-white flex items-center gap-1 font-bold uppercase text-xs cursor-pointer no-print"
       >
-        <ChevronLeft size={16} /> Dashboard
+        <ChevronLeft size={16} /> Ritual Grounds
       </button>
 
-      <header className="border-b-4 border-double border-dnd-red pb-6 mb-8 mt-4">
+      <header className="border-b-4 border-double border-fel-green pb-6 mb-8 mt-4">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-6xl uppercase tracking-tighter leading-none">{character.name}</h1>
-            <p className="text-2xl italic text-gold font-bold">
+            <h1 className="text-6xl uppercase tracking-tighter leading-none text-fel-green">{character.name}</h1>
+            <p className="text-2xl italic text-bone font-bold opacity-80">
               Level {character.level} {character.race} {character.class}
             </p>
           </div>
           <div className="text-right">
-             <div className="border-2 border-dnd-red p-2 bg-parchment inline-block">
-                <div className="text-[10px] font-bold uppercase text-gold">Inspiration</div>
-                <div className="h-6 w-6 border border-gold mx-auto mt-1"></div>
+             <div className="border-2 border-necrotic-purple p-2 bg-abyssal-black inline-block">
+                <div className="text-[10px] font-bold uppercase text-fel-green">Infamy</div>
+                <div className="h-6 w-6 border border-fel-green mx-auto mt-1 bg-necrotic-purple/20"></div>
              </div>
           </div>
         </div>
@@ -42,12 +42,12 @@ export function CharacterSheet({ character, onBack }: Props) {
         {/* Left Column: Stats */}
         <div className="col-span-12 md:col-span-3 space-y-4">
           {Object.entries(character.stats).map(([ability, score]) => (
-            <div key={ability} className="relative pt-4 pb-2 px-2 border-2 border-dnd-red bg-parchment text-center rounded-lg">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-parchment px-2 text-[10px] font-bold uppercase text-dnd-red border border-dnd-red rounded-full">
+            <div key={ability} className="relative pt-4 pb-2 px-2 border-2 border-necrotic-purple bg-abyssal-black text-center rounded-lg shadow-[0_0_15px_rgba(61,0,102,0.3)]">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-abyssal-black px-2 text-[10px] font-bold uppercase text-fel-green border border-necrotic-purple rounded-full">
                 {ability.substring(0, 3)}
               </div>
-              <div className="text-3xl font-bold">{getModifier(score)}</div>
-              <div className="text-sm border-t border-gold/30 mt-1 inline-block px-2 rounded-full bg-gold/10">
+              <div className="text-3xl font-bold text-bone">{getModifier(score)}</div>
+              <div className="text-sm border-t border-necrotic-purple/30 mt-1 inline-block px-2 rounded-full bg-necrotic-purple/20 text-bone/60">
                 {score}
               </div>
             </div>
@@ -57,71 +57,71 @@ export function CharacterSheet({ character, onBack }: Props) {
         {/* Center Column: Combat & Main Info */}
         <div className="col-span-12 md:col-span-9 space-y-6">
           <div className="grid grid-cols-3 gap-4">
-            <div className="border-2 border-dnd-red p-4 bg-parchment text-center rounded-sm relative">
-                <Shield className="absolute top-1 left-1 opacity-10" size={40} />
-                <div className="text-[10px] font-bold uppercase text-gold">Armor Class</div>
-                <div className="text-4xl font-bold">10</div>
+            <div className="border-2 border-necrotic-purple p-4 bg-abyssal-black text-center rounded-sm relative">
+                <Shield className="absolute top-1 left-1 text-fel-green opacity-20" size={40} />
+                <div className="text-[10px] font-bold uppercase text-bone/50">Defense</div>
+                <div className="text-4xl font-bold text-bone">10</div>
             </div>
-            <div className="border-2 border-dnd-red p-4 bg-parchment text-center rounded-sm relative">
-                <Zap className="absolute top-1 left-1 opacity-10" size={40} />
-                <div className="text-[10px] font-bold uppercase text-gold">Initiative</div>
-                <div className="text-4xl font-bold">{getModifier(character.stats.dexterity)}</div>
+            <div className="border-2 border-necrotic-purple p-4 bg-abyssal-black text-center rounded-sm relative">
+                <Zap className="absolute top-1 left-1 text-fel-green opacity-20" size={40} />
+                <div className="text-[10px] font-bold uppercase text-bone/50">Reflex</div>
+                <div className="text-4xl font-bold text-bone">{getModifier(character.stats.dexterity)}</div>
             </div>
-            <div className="border-2 border-dnd-red p-4 bg-parchment text-center rounded-sm relative">
-                <Activity className="absolute top-1 left-1 opacity-10" size={40} />
-                <div className="text-[10px] font-bold uppercase text-gold">Speed</div>
-                <div className="text-4xl font-bold">30ft</div>
+            <div className="border-2 border-necrotic-purple p-4 bg-abyssal-black text-center rounded-sm relative">
+                <Activity className="absolute top-1 left-1 text-fel-green opacity-20" size={40} />
+                <div className="text-[10px] font-bold uppercase text-bone/50">Vigor</div>
+                <div className="text-4xl font-bold text-bone">30ft</div>
             </div>
           </div>
 
-          <div className="border-2 border-dnd-red bg-parchment rounded-sm overflow-hidden">
-            <div className="bg-dnd-red text-parchment px-4 py-1 flex items-center gap-2">
-              <Heart size={16} />
-              <span className="text-sm font-bold uppercase tracking-widest">Hit Points</span>
+          <div className="border-2 border-necrotic-purple bg-abyssal-black rounded-sm overflow-hidden">
+            <div className="bg-necrotic-purple text-bone px-4 py-1 flex items-center gap-2">
+              <Heart size={16} className="text-fel-green" />
+              <span className="text-sm font-bold uppercase tracking-widest">Essence</span>
             </div>
             <div className="p-6 flex justify-around items-center">
                <div className="text-center">
-                  <div className="text-[10px] uppercase font-bold text-gold">Current</div>
-                  <div className="text-5xl font-bold">{character.hp.current}</div>
+                  <div className="text-[10px] uppercase font-bold text-bone/50">Manifest</div>
+                  <div className="text-5xl font-bold text-bone">{character.hp.current}</div>
                </div>
-               <div className="h-12 w-px bg-gold/30"></div>
+               <div className="h-12 w-px bg-necrotic-purple/30"></div>
                <div className="text-center">
-                  <div className="text-[10px] uppercase font-bold text-gold">Max</div>
-                  <div className="text-5xl font-bold">{character.hp.max}</div>
+                  <div className="text-[10px] uppercase font-bold text-bone/50">Threshold</div>
+                  <div className="text-5xl font-bold text-bone">{character.hp.max}</div>
                </div>
             </div>
-            <div className="bg-parchment-dark p-2 border-t border-gold/30 text-center">
-               <div className="text-[10px] uppercase font-bold text-gold">Temporary Hit Points</div>
-               <div className="font-bold">{character.hp.temp || '--'}</div>
+            <div className="bg-necrotic-purple/10 p-2 border-t border-necrotic-purple/30 text-center">
+               <div className="text-[10px] uppercase font-bold text-bone/40">Transient Shadow</div>
+               <div className="font-bold text-fel-green">{character.hp.temp || '--'}</div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <section className="space-y-2">
-              <h2 className="text-2xl border-b-2 border-gold flex items-center gap-2">
-                <Sword size={20} /> Attacks & Spellcasting
+              <h2 className="text-2xl border-b-2 border-necrotic-purple flex items-center gap-2 text-fel-green">
+                <Sword size={20} /> Dark Arts & Sorcery
               </h2>
               <div className="space-y-1">
-                 <div className="grid grid-cols-4 gap-2 text-[10px] font-bold uppercase text-gold px-2">
-                    <div className="col-span-2">Name</div>
-                    <div>Atk</div>
-                    <div>Damage</div>
+                 <div className="grid grid-cols-4 gap-2 text-[10px] font-bold uppercase text-bone/50 px-2">
+                    <div className="col-span-2">Incantation</div>
+                    <div>Prec</div>
+                    <div>Potency</div>
                  </div>
-                 <div className="bg-gold/10 p-2 text-sm italic border-b border-gold/20">
-                    No attacks defined.
+                 <div className="bg-necrotic-purple/5 p-2 text-sm italic border-b border-necrotic-purple/20 text-bone/60">
+                    No rituals bound.
                  </div>
               </div>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-2xl border-b-2 border-gold flex items-center gap-2">
-                <BookIcon size={20} /> Equipment
+              <h2 className="text-2xl border-b-2 border-necrotic-purple flex items-center gap-2 text-fel-green">
+                <BookIcon size={20} /> Reliquary
               </h2>
-              <div className="space-y-1 text-sm italic opacity-80 list-disc list-inside bg-gold/5 p-4 min-h-[100px]">
+              <div className="space-y-1 text-sm italic text-bone/70 list-disc list-inside bg-necrotic-purple/5 p-4 min-h-[100px] border border-necrotic-purple/20">
                  {character.inventory.length > 0 ? (
                    character.inventory.map((item, i) => <div key={i}>{item.name}</div>)
                  ) : (
-                   <div>Your inventory is empty.</div>
+                   <div>Your reliquary is empty.</div>
                  )}
               </div>
             </section>
@@ -129,8 +129,8 @@ export function CharacterSheet({ character, onBack }: Props) {
         </div>
       </div>
 
-      <footer className="mt-12 pt-4 border-t border-gold/30 text-center text-[10px] opacity-40 uppercase tracking-[0.2em]">
-        End of Sheet - Created with D&D Character Manager
+      <footer className="mt-12 pt-4 border-t border-necrotic-purple/30 text-center text-[10px] text-bone/30 uppercase tracking-[0.2em]">
+        End of Revelation - Recorded in the Eternal Grimoire
       </footer>
     </div>
   );

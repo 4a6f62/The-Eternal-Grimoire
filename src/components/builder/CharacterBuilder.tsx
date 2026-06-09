@@ -29,7 +29,7 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
   });
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
-  const prevStep = () => setCurrentStep((prev) => Math.max(prev - 0, 0));
+  const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 
   const saveCharacter = async () => {
     try {
@@ -50,37 +50,37 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
       case 'Basics':
         return (
           <div className="space-y-4">
-            <h2 className="text-3xl border-b border-gold/50 mb-4">Basic Information</h2>
+            <h2 className="text-3xl border-b border-fel-green mb-4 text-fel-green">Initiation Ritual</h2>
             <div className="grid grid-cols-1 gap-4">
               <div className="flex flex-col">
-                <label className="text-sm font-bold uppercase text-gold">Character Name</label>
+                <label className="text-sm font-bold uppercase text-bone/50">Mortal Designation</label>
                 <input
                   type="text"
-                  className="bg-parchment border-2 border-dnd-red p-2 font-serif text-lg focus:outline-none focus:ring-2 focus:ring-gold"
+                  className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone focus:outline-none focus:ring-2 focus:ring-fel-green"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Tordek"
+                  placeholder="e.g. Keldor"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col">
-                  <label className="text-sm font-bold uppercase text-gold">Race</label>
+                  <label className="text-sm font-bold uppercase text-bone/50">Ancestry</label>
                   <input
                     type="text"
-                    className="bg-parchment border-2 border-dnd-red p-2 font-serif text-lg"
+                    className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone"
                     value={formData.race}
                     onChange={(e) => setFormData({ ...formData, race: e.target.value })}
-                    placeholder="e.g. Hill Dwarf"
+                    placeholder="e.g. Undead"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-sm font-bold uppercase text-gold">Class</label>
+                  <label className="text-sm font-bold uppercase text-bone/50">Vocation</label>
                   <input
                     type="text"
-                    className="bg-parchment border-2 border-dnd-red p-2 font-serif text-lg"
+                    className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone"
                     value={formData.class}
                     onChange={(e) => setFormData({ ...formData, class: e.target.value })}
-                    placeholder="e.g. Fighter"
+                    placeholder="e.g. Oathbreaker"
                   />
                 </div>
               </div>
@@ -90,21 +90,21 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
       case 'Abilities':
         return (
           <div className="space-y-4">
-            <h2 className="text-3xl border-b border-gold/50 mb-4">Ability Scores</h2>
+            <h2 className="text-3xl border-b border-fel-green mb-4 text-fel-green">Inner Power</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {Object.keys(formData.stats).map((stat) => (
-                <div key={stat} className="border-2 border-dnd-red p-4 bg-parchment text-center">
-                  <label className="text-sm font-bold uppercase text-gold block mb-1">{stat}</label>
+                <div key={stat} className="border-2 border-necrotic-purple p-4 bg-abyssal-black text-center">
+                  <label className="text-sm font-bold uppercase text-bone/50 block mb-1">{stat}</label>
                   <input
                     type="number"
-                    className="bg-transparent text-3xl font-bold w-full text-center focus:outline-none"
+                    className="bg-transparent text-3xl font-bold w-full text-center text-bone focus:outline-none"
                     value={formData.stats[stat]}
                     onChange={(e) => setFormData({
                       ...formData,
                       stats: { ...formData.stats, [stat]: parseInt(e.target.value) || 10 }
                     })}
                   />
-                  <div className="text-sm italic opacity-60">Modifier: {Math.floor((formData.stats[stat] - 10) / 2)}</div>
+                  <div className="text-sm italic text-fel-green">Mod: {Math.floor((formData.stats[stat] - 10) / 2)}</div>
                 </div>
               ))}
             </div>
@@ -112,27 +112,27 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
         );
       default:
         return (
-          <div className="text-center py-20 italic opacity-50">
-            Step {STEPS[currentStep]} implementation coming soon...
+          <div className="text-center py-20 italic text-bone/30">
+            Ritual of {STEPS[currentStep]} still being woven...
           </div>
         );
     }
   };
 
   return (
-    <div className="max-w-4xl w-full bg-parchment-dark p-8 md:p-12 book-shadow gold-border relative">
-      <header className="border-b-2 border-dnd-red pb-4 mb-8 flex justify-between items-center">
+    <div className="max-w-4xl w-full bg-[#1a0f2e] p-8 md:p-12 book-shadow bone-border relative">
+      <header className="border-b-2 border-fel-green pb-4 mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl uppercase tracking-tighter">New Character</h1>
-          <p className="text-sm italic opacity-80 underline decoration-gold underline-offset-4">
-            Step {currentStep + 1} of {STEPS.length}: {STEPS[currentStep]}
+          <h1 className="text-4xl uppercase tracking-tighter text-fel-green">Bind Soul</h1>
+          <p className="text-sm italic text-bone underline decoration-necrotic-purple underline-offset-4">
+            Phase {currentStep + 1} of {STEPS.length}: {STEPS[currentStep]}
           </p>
         </div>
         <div className="flex gap-2">
           {STEPS.map((_, i) => (
             <div 
               key={i} 
-              className={`h-2 w-8 rounded-full ${i <= currentStep ? 'bg-dnd-red' : 'bg-gold/30'}`} 
+              className={`h-2 w-8 rounded-full ${i <= currentStep ? 'bg-fel-green' : 'bg-necrotic-purple/30'}`} 
             />
           ))}
         </div>
@@ -142,28 +142,28 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
         {renderStep()}
       </div>
 
-      <footer className="mt-12 pt-8 border-t-2 border-dnd-red flex justify-between">
+      <footer className="mt-12 pt-8 border-t-2 border-necrotic-purple flex justify-between">
         <button
           onClick={prevStep}
           disabled={currentStep === 0}
-          className="flex items-center gap-2 font-bold uppercase text-dnd-red disabled:opacity-30 cursor-pointer"
+          className="flex items-center gap-2 font-bold uppercase text-bone/50 disabled:opacity-30 cursor-pointer hover:text-bone"
         >
-          <ChevronLeft /> Back
+          <ChevronLeft /> Regress
         </button>
         
         {currentStep < STEPS.length - 1 ? (
           <button
             onClick={nextStep}
-            className="bg-dnd-red text-parchment px-6 py-2 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-deep-brown transition-colors cursor-pointer"
+            className="bg-necrotic-purple text-bone px-6 py-2 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-fel-green hover:text-abyssal-black transition-all cursor-pointer border border-fel-green/30"
           >
-            Continue <ChevronRight />
+            Advance <ChevronRight />
           </button>
         ) : (
           <button
             onClick={saveCharacter}
-            className="bg-gold text-deep-brown px-6 py-2 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-parchment transition-colors cursor-pointer border-2 border-dnd-red"
+            className="bg-fel-green text-abyssal-black px-6 py-2 rounded-sm font-bold uppercase flex items-center gap-2 hover:bg-white transition-all cursor-pointer border-2 border-necrotic-purple"
           >
-            Save Character <Save />
+            Bind Soul <Save />
           </button>
         )}
       </footer>

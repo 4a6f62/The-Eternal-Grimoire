@@ -41,17 +41,17 @@ function App() {
 
   return (
     <div className="min-h-screen p-8 flex justify-center items-start parchment-texture">
-      <main className="max-w-4xl w-full bg-parchment-dark p-12 book-shadow gold-border relative">
-        <header className="border-b-2 border-dnd-red pb-4 mb-8 flex justify-between items-end">
+      <main className="max-w-4xl w-full bg-[#1a0f2e] p-12 book-shadow bone-border relative border-necrotic-purple">
+        <header className="border-b-2 border-fel-green pb-4 mb-8 flex justify-between items-end">
           <div>
-            <h1 className="text-5xl uppercase tracking-tighter">My Characters</h1>
-            <p className="text-xl italic opacity-80">D&D 5e Character Manager</p>
+            <h1 className="text-5xl uppercase tracking-tighter text-fel-green">The Eternal Grimoire</h1>
+            <p className="text-xl italic text-bone opacity-80">Chronicles of the Shadow-Bound</p>
           </div>
           <button 
             onClick={() => setView('builder')}
-            className="bg-dnd-red text-parchment px-4 py-2 flex items-center gap-2 font-bold uppercase hover:bg-deep-brown transition-colors cursor-pointer"
+            className="bg-necrotic-purple text-bone px-4 py-2 flex items-center gap-2 font-bold uppercase hover:bg-fel-green hover:text-abyssal-black transition-all cursor-pointer border border-fel-green/50"
           >
-            <Plus size={20} /> Create New
+            <Plus size={20} /> Bind New Soul
           </button>
         </header>
 
@@ -61,50 +61,50 @@ function App() {
               <div 
                 key={char.id} 
                 onClick={() => openCharacter(char as CharacterType)}
-                className="border-2 border-dnd-red p-6 bg-parchment relative group cursor-pointer hover:gold-border transition-all"
+                className="border-2 border-necrotic-purple p-6 bg-abyssal-black relative group cursor-pointer hover:border-fel-green transition-all"
               >
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                    <button 
                     onClick={(e) => deleteCharacter(e, char.id)}
-                    className="text-dnd-red hover:text-deep-brown cursor-pointer p-1"
+                    className="text-fel-green hover:text-white cursor-pointer p-1"
                    >
                      <Trash2 size={20} />
                    </button>
                 </div>
-                <h3 className="text-2xl mb-1">{char.name}</h3>
-                <div className="text-sm italic text-gold uppercase font-bold mb-4">
+                <h3 className="text-2xl mb-1 text-bone">{char.name}</h3>
+                <div className="text-sm italic text-fel-green uppercase font-bold mb-4">
                   Level {char.level} {char.race} {char.class}
                 </div>
                 
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="text-center border border-gold/30 p-1">
-                    <div className="text-[10px] uppercase font-bold">HP</div>
-                    <div className="font-bold">{char.hp.current}/{char.hp.max}</div>
+                  <div className="text-center border border-necrotic-purple p-1 bg-[#1a0f2e]">
+                    <div className="text-[10px] uppercase font-bold text-bone/50">HP</div>
+                    <div className="font-bold text-bone">{char.hp.current}/{char.hp.max}</div>
                   </div>
-                  <div className="text-center border border-gold/30 p-1">
-                    <div className="text-[10px] uppercase font-bold">AC</div>
-                    <div className="font-bold">10</div>
+                  <div className="text-center border border-necrotic-purple p-1 bg-[#1a0f2e]">
+                    <div className="text-[10px] uppercase font-bold text-bone/50">AC</div>
+                    <div className="font-bold text-bone">10</div>
                   </div>
-                  <div className="text-center border border-gold/30 p-1">
-                    <div className="text-[10px] uppercase font-bold">INIT</div>
-                    <div className="font-bold">{(char.stats.dexterity - 10) / 2 >= 0 ? `+${Math.floor((char.stats.dexterity - 10) / 2)}` : Math.floor((char.stats.dexterity - 10) / 2)}</div>
+                  <div className="text-center border border-necrotic-purple p-1 bg-[#1a0f2e]">
+                    <div className="text-[10px] uppercase font-bold text-bone/50">INIT</div>
+                    <div className="font-bold text-bone">{(char.stats.dexterity - 10) / 2 >= 0 ? `+${Math.floor((char.stats.dexterity - 10) / 2)}` : Math.floor((char.stats.dexterity - 10) / 2)}</div>
                   </div>
                 </div>
 
-                <button className="w-full border border-dnd-red py-1 text-xs uppercase font-bold group-hover:bg-dnd-red group-hover:text-parchment transition-colors">
-                  Open Sheet
+                <button className="w-full border border-fel-green py-1 text-xs uppercase font-bold group-hover:bg-fel-green group-hover:text-abyssal-black transition-colors">
+                  Consult Tome
                 </button>
               </div>
             ))
           ) : (
-            <div className="col-span-2 text-center py-20 border-2 border-dashed border-gold/50 opacity-50 italic">
-              No characters found. Create your first hero to begin!
+            <div className="col-span-2 text-center py-20 border-2 border-dashed border-necrotic-purple/50 text-bone/50 italic">
+              No souls bound yet. Initiate a new ritual to begin.
             </div>
           )}
         </section>
 
-        <footer className="mt-12 pt-4 border-t border-gold/30 text-center text-sm opacity-60">
-          Built for the 5th Edition of the world's greatest roleplaying game.
+        <footer className="mt-12 pt-4 border-t border-fel-green/30 text-center text-sm text-bone/40">
+          Woven in the shadows of the Eternal Forge.
         </footer>
       </main>
     </div>
