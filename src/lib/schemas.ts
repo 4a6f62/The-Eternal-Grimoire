@@ -5,9 +5,15 @@ export const AbilityScoreSchema = z.number().int().min(1).max(30);
 export const CharacterSchema = z.object({
   id: z.number().optional(),
   name: z.string().min(1),
-  level: z.number().int().min(1).max(20),
   race: z.string().min(1),
-  class: z.string().min(1),
+  ruleset: z.enum(['2014', '2024']).default('2014'),
+  classes: z.array(z.object({
+    name: z.string(),
+    level: z.number().int().min(1),
+    subclass: z.string().optional(),
+  })).min(1),
+  class: z.string().min(1).optional(),
+  level: z.number().int().min(1).max(20).optional(),
   subclass: z.string().optional(),
   size: z.string().default('Medium'),
   alignment: z.string().default('True Neutral'),

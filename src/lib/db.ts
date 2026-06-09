@@ -3,9 +3,11 @@ import Dexie, { type Table } from 'dexie';
 export interface Character {
   id?: number;
   name: string;
-  level: number;
   race: string;
-  class: string;
+  ruleset: '2014' | '2024';
+  classes: Array<{ name: string; level: number; subclass?: string }>;
+  class?: string;
+  level?: number;
   subclass?: string;
   size: string;
   alignment: string;

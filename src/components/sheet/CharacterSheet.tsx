@@ -166,7 +166,12 @@ export function CharacterSheet({ character, onBack, onEdit }: Props) {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-[10px] font-bold uppercase bg-parchment-base p-4 border border-border-sepia shadow-inner flex-grow">
             <div className="border-b border-border-sepia">
-              <div className="text-ink">{character.class}{character.subclass ? ` (${character.subclass})` : ''} {character.level}</div>
+              <div className="text-ink">
+                {character.classes 
+                  ? `${character.classes[0].name}${character.classes[0].subclass ? ` (${character.classes[0].subclass})` : ''} ${character.classes.reduce((acc: number, c: any) => acc + (c.level || 0), 0)}`
+                  : `${character.class}${character.subclass ? ` (${character.subclass})` : ''} ${character.level}`
+                }
+              </div>
               <div className="text-dnd-gold">Class & Level</div>
             </div>
             <div className="border-b border-border-sepia">

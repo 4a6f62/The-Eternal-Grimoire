@@ -5,9 +5,9 @@ import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { fetchAndCache5eData, fetchClassDetails } from '../../lib/dataFetcher';
 
-type Step = 'Basics' | 'Abilities' | 'Proficiencies' | 'Features' | 'Equipment' | 'Review';
+type Step = 'Ruleset' | 'Basics' | 'Abilities' | 'Proficiencies' | 'Features' | 'Equipment' | 'Review';
 
-const STEPS: Step[] = ['Basics', 'Abilities', 'Proficiencies', 'Features', 'Equipment', 'Review'];
+const STEPS: Step[] = ['Ruleset', 'Basics', 'Abilities', 'Proficiencies', 'Features', 'Equipment', 'Review'];
 
 const ALL_SKILLS = [
   'Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History', 
@@ -27,9 +27,11 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
   const [formData, setFormData] = useState<any>(editingCharacter || {
     name: '',
     level: 1,
+    ruleset: '2014',
     race: '',
-    class: '',
+    classes: [{ name: '', level: 1, subclass: '' }],
     size: 'Medium',
+    alignment: 'True Neutral',
     stats: {
       strength: 8,
       dexterity: 8,
@@ -161,50 +163,40 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
 
       const allProficiencies = Array.from(new Set([...formData.proficiencies, ...racialProfs]));
 
-      // Extract equipment from choices
-      const selectedClassData = classes?.find(c => c.name === formData.class);
-      const classDetails = selectedClassData?.data?.fullData?.class?.find((c: any) => c.name === formData.class);
-      const equipmentOptions = classDetails?.startingEquipment?.default || [];
-      const equipmentData = classDetails?.startingEquipment?.defaultData || [];
-      
-      const inventory = equipmentOptions.flatMap((opt: string, idx: number) => {
-        const parts = opt.split(' or ');
+      // Extract equipment from all classes
+      const inventory = formData.classes.flatMap((cls: any) => {
+        const selectedClassData = classes?.find(c => c.name === cls.name);
+        const classDetails = selectedClassData?.data?.fullData?.class?.find((c: any) => c.name === cls.name);
+        const equipmentOptions = classDetails?.startingEquipment?.default || [];
+        const equipmentData = classDetails?.startingEquipment?.defaultData || [];
         
-        // If equipmentData has the '_' key, it means it's an automatic inclusion, not a choice.
-        const isAutomatic = equipmentData[idx] && equipmentData[idx]['_'];
-        const choiceKey = isAutomatic ? '_' : (formData.resources.equipmentChoices?.[idx] || 'a');
-        
-        if (equipmentData.length > 0 && equipmentData[idx] && equipmentData[idx][choiceKey]) {
-            // Build from structured data
-            return equipmentData[idx][choiceKey].map((itemObj: any, itemIdx: number) => {
-              if (typeof itemObj === 'string') return cleanText(itemObj.split('|')[0]);
-              if (itemObj.item) {
-                  const name = cleanText(itemObj.item.split('|')[0]);
-                  return itemObj.quantity > 1 ? `${name} x${itemObj.quantity}` : name;
-              }
-              if (itemObj.equipmentType) {
-                  const qty = itemObj.quantity || 1;
-                  return Array.from({length: qty}).map((_, qIdx) => {
-                      const spec = formData.resources.equipmentSpecifics?.[idx]?.[choiceKey]?.[`${itemIdx}-${qIdx}`];
-                      const defaultWep = (WEAPONS[itemObj.equipmentType] || WEAPONS.weaponSimple)[0];
-                      return spec ? cleanText(spec) : cleanText(defaultWep);
-                  }).join('|||');
-              }
-              return "Item";
-            });
-        }
-
-        // Fallback to basic string parsing
-        if (parts.length < 2) {
-            // For automatic strings, split by " and "
-            return opt.split(/ and /i).map(s => cleanText(s.replace(/^[Aa]n? /, '').trim()));
-        }
-        
-        const choice = choiceKey === 'a' ? parts[0].replace('(a) ', '') : 
-                       choiceKey === 'b' ? parts[1].replace('(b) ', '') : 
-                       choiceKey === 'c' && parts[2] ? parts[2].replace('(c) ', '') : parts[0];
-        
-        return cleanText(choice);
+        return equipmentOptions.flatMap((opt: string, idx: number) => {
+            const isAutomatic = equipmentData[idx] && equipmentData[idx]['_'];
+            const choiceKey = isAutomatic ? '_' : (formData.resources.equipmentChoices?.[`${cls.name}-${idx}`] || 'a');
+            
+            if (equipmentData.length > 0 && equipmentData[idx] && equipmentData[idx][choiceKey]) {
+                return equipmentData[idx][choiceKey].map((itemObj: any, itemIdx: number) => {
+                  if (typeof itemObj === 'string') return cleanText(itemObj.split('|')[0]);
+                  if (itemObj.item) {
+                      const name = cleanText(itemObj.item.split('|')[0]);
+                      return itemObj.quantity > 1 ? `${name} x${itemObj.quantity}` : name;
+                  }
+                  if (itemObj.equipmentType) {
+                      const qty = itemObj.quantity || 1;
+                      return Array.from({length: qty}).map((_, qIdx) => {
+                          const spec = formData.resources.equipmentSpecifics?.[`${cls.name}-${idx}`]?.[choiceKey]?.[`${itemIdx}-${qIdx}`];
+                          const defaultWep = (WEAPONS[itemObj.equipmentType] || WEAPONS.weaponSimple)[0];
+                          return spec ? cleanText(spec) : cleanText(defaultWep);
+                      }).join('|||');
+                  }
+                  return "Item";
+                });
+            }
+            if (opt.split(' or ').length < 2) {
+                return opt.split(/ and /i).map(s => cleanText(s.replace(/^[Aa]n? /, '').trim()));
+            }
+            return [];
+        });
       }).flatMap((i: string) => i.split('|||')).filter(Boolean);
 
       const validated = CharacterSchema.parse({
@@ -213,7 +205,7 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
         inventory,
         lastModified: Date.now(),
       });
-
+      
       if (formData.id) {
         await db.characters.put(validated);
       } else {
@@ -265,6 +257,23 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
 
   const renderStep = () => {
     switch (STEPS[currentStep]) {
+      case 'Ruleset':
+        return (
+          <div className="space-y-8 animate-in fade-in duration-500">
+             <h2 className="text-4xl text-fel-green tracking-tighter">Choose Ruleset</h2>
+             <div className="grid grid-cols-2 gap-8">
+                {['2014', '2024'].map(r => (
+                  <button 
+                    key={r}
+                    onClick={() => setFormData({...formData, ruleset: r})}
+                    className={`p-8 border-2 font-black uppercase text-2xl ${formData.ruleset === r ? 'bg-fel-green text-abyssal-black border-fel-green' : 'bg-abyssal-black/50 border-bone/20 text-bone'}`}
+                  >
+                    5e {r}
+                  </button>
+                ))}
+             </div>
+          </div>
+        );
       case 'Basics':
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -282,15 +291,10 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-xs font-bold uppercase text-bone/60 mb-2 tracking-widest">Level</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
-                    className="bg-abyssal-black/50 border border-fel-green/30 p-4 font-serif text-2xl text-center text-bone focus:outline-none focus:border-fel-green shadow-inner transition-all h-full"
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) || 1 })}
-                  />
+                  <label className="text-xs font-bold uppercase text-bone/60 mb-2 tracking-widest">Total Level</label>
+                  <div className="p-4 bg-abyssal-black/50 border border-fel-green/30 text-2xl text-bone text-center font-bold">
+                      {formData.classes.reduce((acc: number, c: any) => acc + (c.level || 0), 0)}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -317,63 +321,78 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
                   )}
                 </div>
                 <div className="flex flex-col space-y-4">
-                  <div className="flex flex-col">
-                    <label className="text-xs font-bold uppercase text-bone/60 mb-2 tracking-widest">Class</label>
-                    <select
-                      className="bg-abyssal-black/50 border border-fel-green/30 p-4 font-serif text-lg text-bone focus:outline-none focus:border-fel-green appearance-none cursor-pointer"
-                      value={formData.class}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFormData({ ...formData, class: val, subclass: '' });
-                        
-                        // Immediately fetch class details when selected
-                        const classData = classes?.find(c => c.name === val);
-                        if (classData?.data?.filename) {
-                          // Using a timeout to not block the UI render
-                          setTimeout(() => {
-                            fetchClassDetails(val, classData.data.filename).catch(console.error);
-                          }, 0);
-                        }
-                      }}
-                    >
-                      <option value="">Choose Class...</option>
-                      {classes?.map(c => (
-                        <option key={c.id} value={c.name} className="bg-abyssal-black text-bone">{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  {formData.class && (() => {
-                    const selectedClassData = classes?.find(c => c.name === formData.class);
+                  <label className="text-xs font-bold uppercase text-bone/60 mb-2 tracking-widest">Classes</label>
+                  {formData.classes.map((cls: any, idx: number) => {
+                    const selectedClassData = classes?.find(c => c.name === cls.name);
                     const subclasses = selectedClassData?.data?.fullData?.subclass || [];
                     const subclassTitle = selectedClassData?.data?.fullData?.class?.[0]?.subclassTitle || 'Subclass';
-                    
-                    if (subclasses.length === 0) return null;
-                    
-                    return (
-                      <div className="flex flex-col mt-4 animate-in fade-in slide-in-from-top-2">
-                        <label className="text-xs font-bold uppercase text-necrotic-purple/80 mb-2 tracking-widest">{subclassTitle}</label>
-                        <select
-                          className="bg-abyssal-black/50 border border-necrotic-purple/30 p-4 font-serif text-lg text-bone focus:outline-none focus:border-necrotic-purple appearance-none cursor-pointer"
-                          value={formData.subclass || ''}
-                          onChange={(e) => setFormData({ ...formData, subclass: e.target.value })}
-                        >
-                          <option value="">Choose {subclassTitle}...</option>
-                          {subclasses.map((sc: any) => (
-                            <option key={sc.shortName || sc.name} value={sc.name} className="bg-abyssal-black text-bone">{sc.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    );
-                  })()}
 
-                  {formData.class && (
-                    <div className="p-4 bg-fel-green/10 border-l-4 border-fel-green animate-in fade-in slide-in-from-left-2 mt-4">
-                      <p className="text-bone/80 text-sm leading-relaxed italic">
-                        {getClassDescription(formData.class)}
-                      </p>
-                    </div>
-                  )}
+                    return (
+                        <div key={idx} className="space-y-2 mb-4 p-4 border border-fel-green/20 bg-abyssal-black/30">
+                            <div className="flex gap-2">
+                                <select
+                                  className="flex-grow bg-abyssal-black/50 border border-fel-green/30 p-4 font-serif text-lg text-bone focus:outline-none focus:border-fel-green appearance-none cursor-pointer"
+                                  value={cls.name}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const newClasses = [...formData.classes];
+                                    newClasses[idx] = { name: val, level: 1, subclass: '' };
+                                    setFormData({ ...formData, classes: newClasses });
+                                    
+                                    const classData = classes?.find(c => c.name === val);
+                                    if (classData?.data?.filename) {
+                                        setTimeout(() => {
+                                            fetchClassDetails(val, classData.data.filename).catch(console.error);
+                                        }, 0);
+                                    }
+                                  }}
+                                >
+                                  <option value="">Choose Class...</option>
+                                  {classes?.map(c => (
+                                    <option key={c.id} value={c.name} className="bg-abyssal-black text-bone">{c.name}</option>
+                                  ))}
+                                </select>
+                                <input
+                                    type="number"
+                                    className="w-16 bg-abyssal-black/50 border border-fel-green/30 p-4 text-center text-bone"
+                                    value={cls.level}
+                                    onChange={(e) => {
+                                        const newClasses = [...formData.classes];
+                                        newClasses[idx].level = parseInt(e.target.value) || 1;
+                                        setFormData({ ...formData, classes: newClasses });
+                                    }}
+                                />
+                            </div>
+                            
+                            {subclasses.length > 0 && (
+                                <select
+                                  className="w-full bg-abyssal-black/50 border border-necrotic-purple/30 p-2 font-serif text-md text-bone focus:outline-none focus:border-necrotic-purple appearance-none cursor-pointer"
+                                  value={cls.subclass || ''}
+                                  onChange={(e) => {
+                                    const newClasses = [...formData.classes];
+                                    newClasses[idx].subclass = e.target.value;
+                                    setFormData({ ...formData, classes: newClasses });
+                                  }}
+                                >
+                                  <option value="">Choose {subclassTitle}...</option>
+                                  {subclasses.map((sc: any) => (
+                                    <option key={sc.shortName || sc.name} value={sc.name} className="bg-abyssal-black text-bone">{sc.name}</option>
+                                  ))}
+                                </select>
+                            )}
+
+                            {cls.name && (
+                                <p className="text-bone/70 text-xs italic mt-2">
+                                    {getClassDescription(cls.name)}
+                                </p>
+                            )}
+                        </div>
+                    );
+                  })}
+                  <button 
+                    onClick={() => setFormData({...formData, classes: [...formData.classes, {name: '', level: 1, subclass: ''}]})}
+                    className="text-fel-green text-sm font-bold uppercase"
+                  >+ Add Class</button>
                 </div>
               </div>
 
@@ -592,31 +611,37 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
           desc: extractDesc(e)
         })) || [];
         
-        const selectedClassData = classes?.find(c => c.name === formData.class);
-        const classFeatureData = selectedClassData?.data?.fullData?.classFeature || [];
-        const subclassFeatureData = selectedClassData?.data?.fullData?.subclassFeature || [];
+        const rawClassFeatures: any[] = [];
         
-        let _selectedSubclassData: any = null;
-        if (formData.subclass && selectedClassData?.data?.fullData?.subclass) {
-            _selectedSubclassData = selectedClassData.data.fullData.subclass.find((sc: any) => sc.name === formData.subclass);
-        }
+        formData.classes.forEach((cls: any) => {
+            const selectedClassData = classes?.find(c => c.name === cls.name);
+            const classFeatureData = selectedClassData?.data?.fullData?.classFeature || [];
+            const subclassFeatureData = selectedClassData?.data?.fullData?.subclassFeature || [];
+            
+            let selectedSubclassData: any = null;
+            if (cls.subclass && selectedClassData?.data?.fullData?.subclass) {
+                selectedSubclassData = selectedClassData.data.fullData.subclass.find((sc: any) => sc.name === cls.subclass);
+            }
 
-        let rawClassFeatures = classFeatureData
-          .filter((f: any) => f.level <= formData.level)
-          .map((f: any) => ({
-            name: cleanText(f.name),
-            desc: extractDesc(f)
-          }));
-
-        if (_selectedSubclassData?.shortName) {
-            const scFeatures = subclassFeatureData
-              .filter((f: any) => f.level <= formData.level && f.subclassShortName === _selectedSubclassData.shortName)
+            const classFeatures = classFeatureData
+              .filter((f: any) => f.level <= cls.level)
               .map((f: any) => ({
-                  name: cleanText(f.name),
-                  desc: extractDesc(f)
+                name: cleanText(f.name),
+                desc: extractDesc(f)
               }));
-            rawClassFeatures.push(...scFeatures);
-        }
+            
+            rawClassFeatures.push(...classFeatures);
+
+            if (selectedSubclassData?.shortName) {
+                const scFeatures = subclassFeatureData
+                  .filter((f: any) => f.level <= cls.level && f.subclassShortName === selectedSubclassData.shortName)
+                  .map((f: any) => ({
+                      name: cleanText(f.name),
+                      desc: extractDesc(f)
+                  }));
+                rawClassFeatures.push(...scFeatures);
+            }
+        });
 
         const asiCount = rawClassFeatures.filter((f: any) => f.name === 'Ability Score Improvement').length;
 
@@ -731,7 +756,7 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
                         {feat.desc}
                       </div>
                    </details>
-                )) : <div className="text-sm italic text-bone/40">No notable class features at level 1.</div>}
+                )) : <div className="text-sm italic text-bone/40">No notable class features selected.</div>}
               </div>
             </div>
 

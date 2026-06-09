@@ -99,7 +99,7 @@ function App() {
                 </div>
                 <h3 className="text-2xl mb-1 text-dnd-red">{char.name}</h3>
                 <div className="text-sm italic text-ink/60 uppercase font-bold mb-4 tracking-widest border-b border-dnd-gold/30 pb-1">
-                  Lvl {char.level} {char.race} {char.class}
+                  Lvl {char.classes ? char.classes.reduce((acc: number, c: any) => acc + (c.level || 0), 0) : char.level} {char.race} {char.classes ? char.classes[0].name : char.class}
                 </div>
                 
                 <div className="grid grid-cols-3 gap-3 mb-4">
