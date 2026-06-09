@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dnd-red: #58180D;
+  --color-parchment: #F4E7C5;
+  --color-parchment-dark: #E8D4A2;
+  --color-deep-brown: #241915;
+  --color-gold: #C9AD6A;
+
+  --font-serif: "Crimson Pro", "Bookman Old Style", "Georgia", serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-parchment text-deep-brown font-serif selection:bg-dnd-red/20;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-bold text-dnd-red;
+  }
+}
+
+@layer utilities {
+  .parchment-texture {
+    background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
+  }
+
+  .book-shadow {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 100px rgba(0,0,0,0.1);
+  }
+
+  .gold-border {
+    border: 4px double var(--color-gold);
+  }
+}
