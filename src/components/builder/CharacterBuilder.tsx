@@ -95,41 +95,41 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
     switch (STEPS[currentStep]) {
       case 'Basics':
         return (
-          <div className="space-y-4">
-            <h2 className="text-3xl border-b border-fel-green mb-4 text-fel-green">Character Basics</h2>
-            <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-6">
+            <h2 className="text-3xl border-b-2 border-dnd-gold mb-6 pb-2 text-dnd-red">Character Identity</h2>
+            <div className="grid grid-cols-1 gap-6">
               <div className="flex flex-col">
-                <label className="text-sm font-bold uppercase text-bone/50">Character Name</label>
+                <label className="text-xs font-bold uppercase text-dnd-gold mb-1">Character Name</label>
                 <input
                   type="text"
-                  className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone focus:outline-none focus:ring-2 focus:ring-fel-green"
+                  className="bg-parchment-base border border-border-sepia p-3 font-serif text-xl text-ink focus:outline-none focus:border-dnd-red shadow-inner"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Keldor"
+                  placeholder="e.g. Tordek"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div className="flex flex-col">
-                  <label className="text-sm font-bold uppercase text-bone/50">Race</label>
+                  <label className="text-xs font-bold uppercase text-dnd-gold mb-1">Race</label>
                   <select
-                    className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone"
+                    className="bg-parchment-base border border-border-sepia p-3 font-serif text-lg text-ink focus:outline-none focus:border-dnd-red"
                     value={formData.race}
                     onChange={(e) => setFormData({ ...formData, race: e.target.value })}
                   >
-                    <option value="">Select Race...</option>
+                    <option value="">Choose Race...</option>
                     {races?.map(r => (
                       <option key={r.id} value={r.name}>{r.name}</option>
                     ))}
                   </select>
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-sm font-bold uppercase text-bone/50">Class</label>
+                  <label className="text-xs font-bold uppercase text-dnd-gold mb-1">Class</label>
                   <select
-                    className="bg-abyssal-black border-2 border-necrotic-purple p-2 font-serif text-lg text-bone"
+                    className="bg-parchment-base border border-border-sepia p-3 font-serif text-lg text-ink focus:outline-none focus:border-dnd-red"
                     value={formData.class}
                     onChange={(e) => setFormData({ ...formData, class: e.target.value })}
                   >
-                    <option value="">Select Class...</option>
+                    <option value="">Choose Class...</option>
                     {classes?.map(c => (
                       <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
@@ -141,15 +141,15 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
         );
       case 'Abilities':
         return (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center border-b border-fel-green mb-4 pb-2">
-              <h2 className="text-3xl text-fel-green">Ability Scores</h2>
-              <div className={`text-xl font-bold ${pointsRemaining < 0 ? 'text-red-500' : 'text-fel-green'}`}>
-                Points Remaining: {pointsRemaining}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center border-b-2 border-dnd-gold mb-6 pb-2">
+              <h2 className="text-3xl text-dnd-red">Ability Scores</h2>
+              <div className={`px-4 py-1 rounded-full border-2 font-bold ${pointsRemaining < 0 ? 'border-red-600 text-red-600 bg-red-50' : 'border-dnd-gold text-dnd-gold bg-parchment-light'}`}>
+                Points: {pointsRemaining} / 27
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'].map((stat) => {
                 const statKey = stat.toLowerCase();
                 const baseScore = formData.stats[statKey];
@@ -158,26 +158,26 @@ export function CharacterBuilder({ onComplete }: { onComplete: () => void }) {
                 const modifier = Math.floor((total - 10) / 2);
 
                 return (
-                  <div key={stat} className="border-2 border-necrotic-purple p-4 bg-abyssal-black flex items-center justify-between">
+                  <div key={stat} className="p-4 bg-parchment-base border border-border-sepia flex items-center justify-between shadow-sm">
                     <div className="flex-1">
-                      <label className="text-xs font-bold uppercase text-bone/50 block">{stat}</label>
-                      <div className="text-4xl font-bold text-bone">
-                        {total} <span className="text-sm text-fel-green ml-1">({modifier >= 0 ? `+${modifier}` : modifier})</span>
+                      <label className="text-xs font-bold uppercase text-dnd-gold block">{stat}</label>
+                      <div className="text-4xl font-bold text-ink">
+                        {total} <span className="text-lg text-dnd-red ml-1">({modifier >= 0 ? `+${modifier}` : modifier})</span>
                       </div>
-                      {racialBonus > 0 && <div className="text-[10px] text-fel-green font-bold">+{racialBonus} from {formData.race}</div>}
+                      {racialBonus > 0 && <div className="text-[10px] text-dnd-red font-bold italic tracking-wide">+{racialBonus} from {formData.race}</div>}
                     </div>
                     
-                    <div className="flex items-center gap-4 bg-necrotic-purple/20 p-2 rounded">
+                    <div className="flex items-center gap-3 bg-parchment-light p-2 border border-border-sepia rounded-lg shadow-inner">
                       <button 
                         onClick={() => updateStat(statKey, -1)}
-                        className="w-10 h-10 border border-fel-green flex items-center justify-center font-bold text-xl hover:bg-fel-green hover:text-abyssal-black transition-colors"
+                        className="w-8 h-8 flex items-center justify-center font-bold text-xl text-dnd-red hover:bg-dnd-red hover:text-white transition-all rounded-full border border-dnd-red/30 cursor-pointer"
                       >
                         -
                       </button>
-                      <div className="text-2xl font-bold w-8 text-center">{baseScore}</div>
+                      <div className="text-xl font-bold w-6 text-center text-ink">{baseScore}</div>
                       <button 
                         onClick={() => updateStat(statKey, 1)}
-                        className="w-10 h-10 border border-fel-green flex items-center justify-center font-bold text-xl hover:bg-fel-green hover:text-abyssal-black transition-colors"
+                        className="w-8 h-8 flex items-center justify-center font-bold text-xl text-dnd-red hover:bg-dnd-red hover:text-white transition-all rounded-full border border-dnd-red/30 cursor-pointer"
                       >
                         +
                       </button>
