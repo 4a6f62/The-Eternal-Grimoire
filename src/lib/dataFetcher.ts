@@ -1,6 +1,6 @@
 import { db } from './db';
 
-const FIVE_ETOOLS_BASE_URL = 'https://raw.githubusercontent.com/5etools-mirror-2/5etools-mirror-2.github.io/master/data';
+const FIVE_ETOOLS_BASE_URL = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data';
 
 export async function fetchAndCache5eData(type: 'class' | 'race' | 'spells' | 'items') {
   let url = '';
@@ -17,7 +17,23 @@ export async function fetchAndCache5eData(type: 'class' | 'race' | 'spells' | 'i
 
   try {
     const response = await fetch(url);
-    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json") && !contentType.includes("text/plain")) {
+      // GitHub raw often returns text/plain for .json files
+      // But we should at least check if it's not HTML
+    }
+    
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error(`Failed to parse JSON from ${url}. Content starts with: ${text.substring(0, 50)}`);
+      return;
+    }
 
     if (type === 'race') {
       const races = data.race.map((r: any) => ({
