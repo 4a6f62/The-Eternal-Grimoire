@@ -24,9 +24,12 @@ const WEAPONS: Record<string, string[]> = {
 
 export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete: () => void, editingCharacter?: any }) {
   const [currentStep, setCurrentStep] = useState<number>(0);
-  const [formData, setFormData] = useState<any>(editingCharacter || {
+  
+  const initialData = editingCharacter ? {
+      ...editingCharacter,
+      classes: editingCharacter.classes || [{ name: editingCharacter.class || '', level: editingCharacter.level || 1, subclass: editingCharacter.subclass || '' }]
+  } : {
     name: '',
-    level: 1,
     ruleset: '2014',
     race: '',
     classes: [{ name: '', level: 1, subclass: '' }],
@@ -47,7 +50,9 @@ export function CharacterBuilder({ onComplete, editingCharacter }: { onComplete:
     inventory: [],
     spells: [],
     resources: {},
-  });
+  };
+
+  const [formData, setFormData] = useState<any>(initialData);
 
   const races = useLiveQuery(() => db.fiveetools.where('type').equals('race').toArray());
   const classes = useLiveQuery(() => db.fiveetools.where('type').equals('class').toArray());
