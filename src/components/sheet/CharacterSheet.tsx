@@ -407,9 +407,17 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
     try {
       const payload = await encodeShareData(character);
       const shareUrl = `${window.location.origin}${window.location.pathname}?share=${payload}`;
-      navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(shareUrl);
       setShareSuccess(true);
       setTimeout(() => setShareSuccess(false), 3000);
+
+      const hasLocalImages = character.portraitUrl?.startsWith('local:') || character.tokenUrl?.startsWith('local:');
+      let msg = "Public share link copied to clipboard!\n\n";
+      if (hasLocalImages) {
+        msg += "⚠️ Note: Your character uses local portrait/token images stored only in your browser. These will not be visible to other users. To share images, please use public web URLs (like Imgur) in the builder.\n\n";
+      }
+      msg += "💡 Tip: If you see a 'URI Too Long' error opening this link, please force-refresh the page (Ctrl+F5 or Cmd+Shift+R) to load the new compression update.";
+      alert(msg);
     } catch (err) {
       console.error("Failed to generate share link", err);
       alert("Failed to generate share link.");
