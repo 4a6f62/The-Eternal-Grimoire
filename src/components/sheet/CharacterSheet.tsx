@@ -402,6 +402,7 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
   };
 
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleShareClick = async () => {
     try {
@@ -489,6 +490,36 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
     } catch (err) {
       console.error("Failed to export character:", err);
       alert("Failed to export character.");
+    }
+  };
+
+  const handleExportVTT = async (vttType: 'foundry' | 'roll20') => {
+    try {
+      const { exportToFoundry, exportToRoll20 } = await import('../../lib/vttConverters');
+      let data: any;
+      let filename: string;
+      
+      if (vttType === 'foundry') {
+        data = exportToFoundry(character);
+        filename = `${character.name.toLowerCase().replace(/\s+/g, '-')}-foundry.json`;
+      } else {
+        data = exportToRoll20(character);
+        filename = `${character.name.toLowerCase().replace(/\s+/g, '-')}-roll20.json`;
+      }
+      
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(`Failed to export to ${vttType}:`, err);
+      alert(`Failed to export to ${vttType}.`);
     }
   };
 
@@ -690,13 +721,37 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
               </>
             )}
           </button>
-          <button 
-            onClick={handleExportClick}
-            className="text-dnd-gold hover:text-ink flex items-center gap-1 font-bold uppercase text-xs cursor-pointer"
-            title="Download character file"
-          >
-            <Download size={16} /> Export
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="text-dnd-gold hover:text-ink flex items-center gap-1 font-bold uppercase text-xs cursor-pointer"
+              title="Export Character Options"
+            >
+              <Download size={16} /> Export
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-parchment-light border border-border-sepia shadow-xl rounded z-50 py-1 text-left text-[10px] paper-shadow">
+                <button 
+                  onClick={async () => { setShowExportMenu(false); await handleExportClick(); }}
+                  className="w-full px-4 py-2 hover:bg-dnd-gold hover:text-white transition-all text-left text-ink font-bold block cursor-pointer"
+                >
+                  Native (.dndchar)
+                </button>
+                <button 
+                  onClick={async () => { setShowExportMenu(false); await handleExportVTT('foundry'); }}
+                  className="w-full px-4 py-2 hover:bg-dnd-gold hover:text-white transition-all text-left text-ink font-bold block cursor-pointer"
+                >
+                  Foundry VTT (.json)
+                </button>
+                <button 
+                  onClick={async () => { setShowExportMenu(false); await handleExportVTT('roll20'); }}
+                  className="w-full px-4 py-2 hover:bg-dnd-gold hover:text-white transition-all text-left text-ink font-bold block cursor-pointer"
+                >
+                  Roll20 Character (.json)
+                </button>
+              </div>
+            )}
+          </div>
           {!isSharedReadOnly && (
             <button 
               onClick={onEdit}

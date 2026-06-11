@@ -69,11 +69,60 @@ function App() {
       const text = await file.text();
       const importData = JSON.parse(text);
 
-      if (!importData.character || !importData.character.name) {
-        throw new Error("Invalid character file format.");
+      let importedChar: any = null;
+      let portraitImage: string | null = null;
+      let tokenImage: string | null = null;
+      let importWarnings: string[] = [];
+
+      const { importFromFoundry, importFromRoll20, validateCharacterRules } = await import('./lib/vttConverters');
+
+      // 1. Check if it's a Foundry VTT Actor JSON
+      if (importData.type === 'character' && importData.system) {
+        const res = importFromFoundry(importData);
+        importedChar = res.character;
+        importWarnings = res.warnings;
+      }
+      // 2. Check if it's a Roll20 Character JSON
+      else if (importData.attribs) {
+        const res = importFromRoll20(importData);
+        importedChar = res.character;
+        importWarnings = res.warnings;
+      }
+      // 3. Native format
+      else if (importData.character) {
+        importedChar = importData.character;
+        portraitImage = importData.portraitImage || null;
+        tokenImage = importData.tokenImage || null;
+      }
+      else {
+        throw new Error("Unknown character file format. Make sure it is a native .dndchar, a Foundry VTT Actor JSON, or a Roll20 Character JSON.");
       }
 
-      const importedChar = importData.character;
+      if (!importedChar.name) {
+        throw new Error("Invalid character data: name is missing.");
+      }
+
+      // Check rules and validate
+      const ruleErrors = validateCharacterRules(importedChar);
+      
+      if (ruleErrors.length > 0 || importWarnings.length > 0) {
+        let reportMsg = `Import Rules Check for "${importedChar.name}":\n\n`;
+        if (ruleErrors.length > 0) {
+          reportMsg += `❌ Rule Inconsistencies/Errors:\n` + ruleErrors.map(e => ` • ${e}`).join('\n') + `\n\n`;
+        }
+        if (importWarnings.length > 0) {
+          reportMsg += `⚠️ Format Import Warnings:\n` + importWarnings.map(w => ` • ${w}`).join('\n') + `\n\n`;
+        }
+        
+        if (ruleErrors.length > 0) {
+          reportMsg += `This character does not conform to standard D&D 5e rules. Do you want to import anyway?`;
+          const proceed = confirm(reportMsg);
+          if (!proceed) return;
+        } else {
+          alert(reportMsg);
+        }
+      }
+
       delete importedChar.id;
       importedChar.lastModified = Date.now();
       importedChar.creator = importedChar.creator || 'Imported Player';
@@ -84,12 +133,12 @@ function App() {
       if (sessionKey && username) {
         newCharId = await db.characters.put(validated);
         
-        if (importData.portraitImage) {
-          await saveImportedImage(importData.portraitImage, `portrait-${newCharId}`);
+        if (portraitImage) {
+          await saveImportedImage(portraitImage, `portrait-${newCharId}`);
           validated.portraitUrl = `local:portrait-${newCharId}`;
         }
-        if (importData.tokenImage) {
-          await saveImportedImage(importData.tokenImage, `token-${newCharId}`);
+        if (tokenImage) {
+          await saveImportedImage(tokenImage, `token-${newCharId}`);
           validated.tokenUrl = `local:token-${newCharId}`;
         }
 
@@ -109,12 +158,12 @@ function App() {
       } else {
         newCharId = await db.characters.put(validated);
 
-        if (importData.portraitImage) {
-          await saveImportedImage(importData.portraitImage, `portrait-${newCharId}`);
+        if (portraitImage) {
+          await saveImportedImage(portraitImage, `portrait-${newCharId}`);
           validated.portraitUrl = `local:portrait-${newCharId}`;
         }
-        if (importData.tokenImage) {
-          await saveImportedImage(importData.tokenImage, `token-${newCharId}`);
+        if (tokenImage) {
+          await saveImportedImage(tokenImage, `token-${newCharId}`);
           validated.tokenUrl = `local:token-${newCharId}`;
         }
         
