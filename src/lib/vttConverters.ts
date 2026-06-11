@@ -137,6 +137,16 @@ export function exportToRoll20(character: CharacterType): any {
   };
 }
 
+function getSourceString(source: any): string {
+  if (!source) return '';
+  if (typeof source === 'string') return source;
+  if (typeof source === 'object') {
+    const val = source.book || source.value || source.custom || source.long || source.short || '';
+    return val.toString();
+  }
+  return source.toString();
+}
+
 // Parse Foundry VTT Actor JSON into character data
 export function importFromFoundry(json: any): { character: Partial<CharacterType>; warnings: string[] } {
   const warnings: string[] = [];
@@ -226,7 +236,7 @@ export function importFromFoundry(json: any): { character: Partial<CharacterType
           name: item.name,
           level: Number(item.system?.level) || 0,
           desc: item.system?.description?.value ? item.system.description.value.replace(/<[^>]*>/g, '') : 'Spell imported from Foundry.',
-          source: item.system?.source || 'Foundry VTT',
+          source: getSourceString(item.system?.source) || 'Foundry VTT',
           isAlwaysPrepared: item.system?.preparation?.mode === 'always'
         });
       } else if (['weapon', 'equipment', 'loot', 'consumable', 'backpack'].includes(item.type)) {
@@ -249,7 +259,10 @@ export function importFromFoundry(json: any): { character: Partial<CharacterType
   }
 
   // Try to detect ruleset
-  const has2024Source = json.items?.some((i: any) => i.system?.source?.toLowerCase().includes('2024') || i.system?.source?.toLowerCase() === 'xphb');
+  const has2024Source = json.items?.some((i: any) => {
+    const srcStr = getSourceString(i.system?.source).toLowerCase();
+    return srcStr.includes('2024') || srcStr === 'xphb';
+  });
   char.ruleset = has2024Source ? '2024' : '2014';
 
   return { character: char, warnings };
