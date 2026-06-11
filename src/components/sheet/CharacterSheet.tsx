@@ -4,12 +4,191 @@ import type { CharacterType } from '../../lib/schemas';
 import { db } from '../../lib/db';
 import { CharacterImage } from '../builder/CharacterImage';
 import { session, encryptData, encodeShareData } from '../../lib/security';
-
 interface Props {
   character: CharacterType;
   onBack: () => void;
   onEdit: () => void;
   isSharedReadOnly?: boolean;
+}
+
+function cleanText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\{@spell ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@filter ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@item ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@feat ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@class ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@creature ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@condition ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@sense ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@skill ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@status ([^|}]+)(?:\|[^}]+)?\}/g, '$1')
+    .replace(/\{@bold ([^}]+)\}/g, '$1')
+    .replace(/\{@italic ([^}]+)\}/g, '$1')
+    .replace(/\{@note ([^}]+)\}/g, '$1')
+    .replace(/\{@dice ([^}]+)\}/g, '$1');
+}
+
+function extractDesc(entry: any): string {
+  if (!entry) return '';
+  if (typeof entry === 'string') return cleanText(entry);
+  if (Array.isArray(entry)) return entry.map(extractDesc).join(' ');
+  if (entry.entries) return entry.entries.map(extractDesc).join(' ');
+  if (entry.entry) return extractDesc(entry.entry);
+  return '';
+}
+
+async function fetchDescription(
+  name: string,
+  type: 'trait' | 'feat' | 'spell',
+  source?: string,
+  className?: string
+): Promise<string | null> {
+  const cleanName = name.toLowerCase().replace(/fighting style:\s*/i, '').replace(/pact boon:\s*/i, '').trim();
+  const id = `${type}:${cleanName.replace(/\s+/g, '-')}${source ? '-' + source.toLowerCase() : ''}`;
+  
+  try {
+    const localData = await db.fiveetools.get(id);
+    if (localData && localData.data) {
+      return extractDesc(localData.data);
+    }
+  } catch (err) {
+    console.error('Failed to query IndexedDB:', err);
+  }
+
+  const FIVE_ETOOLS_BASE_URL = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data';
+  try {
+    if (type === 'spell') {
+      const src = source ? source.toLowerCase() : 'phb';
+      const url = `${FIVE_ETOOLS_BASE_URL}/spells/spells-${src}.json`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const spell = data.spell?.find((s: any) => s.name.toLowerCase() === name.toLowerCase());
+        if (spell) {
+          return extractDesc(spell);
+        }
+      }
+    } else if (type === 'feat') {
+      const url = `${FIVE_ETOOLS_BASE_URL}/feats.json`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const feat = data.feat?.find((f: any) => f.name.toLowerCase() === name.toLowerCase());
+        if (feat) {
+          return extractDesc(feat);
+        }
+      }
+    } else if (type === 'trait') {
+      if (className) {
+        const url = `${FIVE_ETOOLS_BASE_URL}/class/class-${className.toLowerCase()}.json`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          let feature = data.classFeature?.find((f: any) => f.name.toLowerCase() === name.toLowerCase());
+          if (!feature && data.subclassFeature) {
+            feature = data.subclassFeature?.find((f: any) => f.name.toLowerCase() === name.toLowerCase());
+          }
+          if (feature) {
+            return extractDesc(feature);
+          }
+        }
+      } else {
+        const res = await fetch(`${FIVE_ETOOLS_BASE_URL}/races.json`);
+        if (res.ok) {
+          const data = await res.json();
+          for (const race of data.race || []) {
+            if (race.entries) {
+              const matchingEntry = race.entries.find((e: any) => e.name && e.name.toLowerCase() === name.toLowerCase());
+              if (matchingEntry) {
+                return extractDesc(matchingEntry);
+              }
+            }
+          }
+        }
+        const bgRes = await fetch(`${FIVE_ETOOLS_BASE_URL}/backgrounds.json`);
+        if (bgRes.ok) {
+          const bgData = await bgRes.json();
+          const bg = bgData.background?.find((b: any) => b.name.toLowerCase() === name.toLowerCase());
+          if (bg) {
+            return extractDesc(bg);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch from raw CDN:', err);
+  }
+  return null;
+}
+
+function ExpandableDetails({ 
+  name, 
+  initialDesc, 
+  type, 
+  source, 
+  className,
+  badgeText,
+  titleClassName = "text-dnd-gold",
+  containerClassName = "border-b border-border-sepia/30 pb-1 group cursor-pointer"
+}: { 
+  name: string; 
+  initialDesc?: string; 
+  type: 'trait' | 'feat' | 'spell'; 
+  source?: string; 
+  className?: string;
+  badgeText?: string;
+  titleClassName?: string;
+  containerClassName?: string;
+}) {
+  const [desc, setDesc] = useState(initialDesc);
+  const [loading, setLoading] = useState(false);
+
+  const handleToggle = async (e: React.SyntheticEvent<HTMLDetailsElement>) => {
+    const open = e.currentTarget.open;
+    if (open && !desc && !loading) {
+      setLoading(true);
+      try {
+        const fetchedDesc = await fetchDescription(name, type, source, className);
+        setDesc(fetchedDesc || 'No description found.');
+      } catch (err) {
+        console.error('Failed to fetch description:', err);
+        setDesc('Failed to load description.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  return (
+    <details onToggle={handleToggle} className={containerClassName}>
+      <summary className="font-bold outline-none flex items-center justify-between pr-2 cursor-pointer">
+        <span>
+          <span className={titleClassName}>{name}</span>
+          {className && type === 'spell' && <span className="text-[7px] text-dnd-gold font-normal tracking-wide lowercase ml-1">({className})</span>}
+        </span>
+        {badgeText && (
+          <span className={`text-[6px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+            badgeText === 'cantrip' || badgeText === 'learned'
+              ? 'bg-[#fef9c3] text-[#854d0e] border-[#fde047]/30'
+              : badgeText === 'prepared'
+                ? 'bg-[#dcfce7] text-[#166534] border-[#86efac]/30'
+                : 'bg-[#e9d5ff] text-[#6b21a8] border-[#c084fc]/30'
+          }`}>
+            {badgeText}
+          </span>
+        )}
+      </summary>
+      <div className="mt-1 text-[8px] italic text-ink/70 leading-relaxed pr-2 whitespace-pre-wrap">
+        {loading ? (
+          <span className="animate-pulse">Loading details from 5etools...</span>
+        ) : (
+          desc
+        )}
+      </div>
+    </details>
+  );
 }
 
 export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = false }: Props) {
@@ -924,12 +1103,18 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
                 return Array.from(uniqueTraits.values()).map((trait, i) => {
                   const name = typeof trait === 'string' ? trait : trait.name;
                   const desc = typeof trait === 'string' ? '' : trait.desc;
+                  const source = typeof trait === 'string' ? undefined : trait.source;
+                  const className = typeof trait === 'string' ? undefined : trait.className;
                   
                   return (
-                    <details key={i} className="border-b border-border-sepia/30 pb-1 group cursor-pointer">
-                      <summary className="font-bold text-dnd-gold outline-none">{name}</summary>
-                      {desc && <div className="mt-1 text-[8px] italic text-ink/70 leading-relaxed pr-2">{desc}</div>}
-                    </details>
+                    <ExpandableDetails
+                      key={i}
+                      name={name}
+                      initialDesc={desc}
+                      type="trait"
+                      source={source}
+                      className={className}
+                    />
                   );
                 });
               })()}
@@ -937,16 +1122,19 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
                 if (!feat) return null;
                 const name = typeof feat === 'string' ? feat : feat.name;
                 const desc = typeof feat === 'string' ? '' : feat.desc;
+                const source = typeof feat === 'string' ? undefined : feat.source;
                 if (!name) return null;
                 
                 return (
-                  <details key={`feat-${i}`} className="border-b border-border-sepia/30 pb-1 group cursor-pointer">
-                    <summary className="font-bold text-necrotic-purple outline-none flex flex-col">
-                       <span className="uppercase text-[8px] opacity-70">Feat / ASI</span>
-                       <span className="text-ink">{name}</span>
-                    </summary>
-                    {desc && <div className="mt-1 text-[8px] italic text-ink/70 leading-relaxed pr-2">{desc}</div>}
-                  </details>
+                  <ExpandableDetails
+                    key={`feat-${i}`}
+                    name={name}
+                    initialDesc={desc}
+                    type="feat"
+                    source={source}
+                    badgeText="Feat / ASI"
+                    titleClassName="text-ink"
+                  />
                 );
               })}
               {(!character.traits || character.traits.length === 0) && (!character.feats || character.feats.length === 0) && (
@@ -979,24 +1167,18 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
                               : 'learned';
                         
                         return (
-                          <details key={idx} className="border-b border-border-sepia/20 pb-1 group cursor-pointer pl-1">
-                            <summary className="font-bold text-ink outline-none flex items-center justify-between pr-2">
-                              <span>
-                                {s.name} {s.class && <span className="text-[7px] text-dnd-gold font-normal tracking-wide lowercase ml-1">({s.class})</span>}
-                              </span>
-                              <span className={`text-[6px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
-                                s.isAlwaysPrepared 
-                                  ? 'bg-[#e9d5ff] text-[#6b21a8] border-[#c084fc]/30' 
-                                  : badgeText === 'prepared' 
-                                    ? 'bg-[#dcfce7] text-[#166534] border-[#86efac]/30' 
-                                    : 'bg-[#fef9c3] text-[#854d0e] border-[#fde047]/30'
-                              }`}>
-                                {badgeText}
-                              </span>
-                            </summary>
-                            <div className="mt-1 text-[8px] italic text-ink/70 leading-relaxed pr-2">{s.desc}</div>
-                          </details>
-                        );
+                           <ExpandableDetails
+                             key={idx}
+                             name={s.name}
+                             initialDesc={s.desc}
+                             type="spell"
+                             source={s.source}
+                             className={s.class}
+                             badgeText={badgeText}
+                             titleClassName="text-ink"
+                             containerClassName="border-b border-border-sepia/20 pb-1 group cursor-pointer pl-1"
+                           />
+                         );
                       })}
                     </div>
                   );

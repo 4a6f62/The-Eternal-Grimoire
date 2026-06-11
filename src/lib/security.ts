@@ -189,9 +189,47 @@ export const session: SessionState = {
   key: null
 };
 
+function pruneForSharing(character: any): any {
+  if (!character) return character;
+  const pruned = JSON.parse(JSON.stringify(character));
+  
+  if (pruned.traits) {
+    pruned.traits = pruned.traits.map((t: any) => {
+      if (t && t.desc && t.desc.length > 100 && t.source && t.source !== 'Homebrew' && t.source !== 'Custom') {
+        const { desc, ...rest } = t;
+        return rest;
+      }
+      return t;
+    });
+  }
+  
+  if (pruned.feats) {
+    pruned.feats = pruned.feats.map((f: any) => {
+      if (f && f.desc && f.desc.length > 100 && f.source && f.source !== 'Homebrew' && f.source !== 'Custom') {
+        const { desc, ...rest } = f;
+        return rest;
+      }
+      return f;
+    });
+  }
+  
+  if (pruned.spells) {
+    pruned.spells = pruned.spells.map((s: any) => {
+      if (s && s.desc && s.desc.length > 100 && s.source && s.source !== 'Homebrew' && s.source !== 'Custom') {
+        const { desc, ...rest } = s;
+        return rest;
+      }
+      return s;
+    });
+  }
+  
+  return pruned;
+}
+
 // URL-safe base64 encoding with deflate compression for public character sharing
 export async function encodeShareData(data: any): Promise<string> {
-  const jsonStr = JSON.stringify(data);
+  const pruned = pruneForSharing(data);
+  const jsonStr = JSON.stringify(pruned);
   const bytes = new TextEncoder().encode(jsonStr);
   const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'));
   const buffer = await new Response(stream).arrayBuffer();
