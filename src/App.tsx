@@ -6,8 +6,8 @@ import { CharacterBuilder } from './components/builder/CharacterBuilder';
 import { CharacterSheet } from './components/sheet/CharacterSheet';
 import { AuthScreen } from './components/auth/AuthScreen';
 import { session, decryptData, encryptData, bufToHex, decodeShareData } from './lib/security';
-import { Plus, Trash2, Edit3, Sun, Moon, LogOut } from 'lucide-react';
-import type { CharacterType } from './lib/schemas';
+import { Plus, Trash2, Edit3, Sun, Moon, LogOut, Upload } from 'lucide-react';
+import { CharacterSchema, type CharacterType } from './lib/schemas';
 import { CharacterImage } from './components/builder/CharacterImage';
 
 function App() {
@@ -26,6 +26,108 @@ function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
   });
+
+  const saveImportedImage = async (base64DataUrl: string, imageId: string) => {
+    const match = base64DataUrl.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+    if (!match) return;
+    const [, mime, base64] = match;
+    
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: mime });
+
+    if (sessionKey && username) {
+      const arrayBuffer = await blob.arrayBuffer();
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await window.crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        sessionKey,
+        arrayBuffer
+      );
+      await db.encrypted_images.put({
+        id: imageId,
+        username,
+        ciphertextHex: bufToHex(encrypted),
+        ivHex: bufToHex(iv.buffer)
+      });
+    } else {
+      await db.images.put({
+        id: imageId,
+        blob
+      });
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const importData = JSON.parse(text);
+
+      if (!importData.character || !importData.character.name) {
+        throw new Error("Invalid character file format.");
+      }
+
+      const importedChar = importData.character;
+      delete importedChar.id;
+      importedChar.lastModified = Date.now();
+      importedChar.creator = importedChar.creator || 'Imported Player';
+
+      let newCharId: number;
+      const validated = CharacterSchema.parse(importedChar);
+
+      if (sessionKey && username) {
+        newCharId = await db.characters.put(validated);
+        
+        if (importData.portraitImage) {
+          await saveImportedImage(importData.portraitImage, `portrait-${newCharId}`);
+          validated.portraitUrl = `local:portrait-${newCharId}`;
+        }
+        if (importData.tokenImage) {
+          await saveImportedImage(importData.tokenImage, `token-${newCharId}`);
+          validated.tokenUrl = `local:token-${newCharId}`;
+        }
+
+        await db.characters.put({ ...validated, id: newCharId });
+
+        const plainText = JSON.stringify({ ...validated, id: newCharId });
+        const { ciphertextHex, ivHex } = await encryptData(plainText, sessionKey);
+        await db.encrypted_characters.put({
+          id: newCharId,
+          username,
+          ciphertextHex,
+          ivHex,
+          lastModified: Date.now()
+        });
+        
+        await db.characters.delete(newCharId);
+      } else {
+        newCharId = await db.characters.put(validated);
+
+        if (importData.portraitImage) {
+          await saveImportedImage(importData.portraitImage, `portrait-${newCharId}`);
+          validated.portraitUrl = `local:portrait-${newCharId}`;
+        }
+        if (importData.tokenImage) {
+          await saveImportedImage(importData.tokenImage, `token-${newCharId}`);
+          validated.tokenUrl = `local:token-${newCharId}`;
+        }
+        
+        await db.characters.put({ ...validated, id: newCharId });
+      }
+
+      alert(`Successfully imported "${importedChar.name}"!`);
+      e.target.value = '';
+    } catch (err: any) {
+      console.error("Failed to import character:", err);
+      alert(`Import failed: ${err.message || err}`);
+    }
+  };
 
   // Query encrypted characters for the active user
   const encryptedList = useLiveQuery<EncryptedCharacter[] | undefined>(
@@ -324,9 +426,18 @@ function App() {
             >
               <LogOut size={18} />
             </button>
+            <label className="bg-dnd-gold text-white px-6 py-2 flex items-center gap-2 font-bold uppercase hover:bg-ink transition-all cursor-pointer shadow-md text-xs md:text-sm">
+              <Upload size={18} /> Import Hero
+              <input 
+                type="file" 
+                accept=".dndchar,.json" 
+                onChange={handleImportFile} 
+                className="hidden" 
+              />
+            </label>
             <button 
               onClick={() => setView('builder')}
-              className="bg-dnd-red text-white px-6 py-2 flex items-center gap-2 font-bold uppercase hover:bg-ink transition-all cursor-pointer shadow-md"
+              className="bg-dnd-red text-white px-6 py-2 flex items-center gap-2 font-bold uppercase hover:bg-ink transition-all cursor-pointer shadow-md text-xs md:text-sm"
             >
               <Plus size={20} /> New Hero
             </button>

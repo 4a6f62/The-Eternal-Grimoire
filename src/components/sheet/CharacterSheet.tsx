@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { ChevronLeft, Edit3, Sun, Moon, Share2 } from 'lucide-react';
+import { ChevronLeft, Edit3, Sun, Moon, Share2, Download } from 'lucide-react';
 import type { CharacterType } from '../../lib/schemas';
 import { db } from '../../lib/db';
 import { CharacterImage } from '../builder/CharacterImage';
-import { session, encryptData, encodeShareData } from '../../lib/security';
+import { session, encryptData, encodeShareData, hexToBuf } from '../../lib/security';
 interface Props {
   character: CharacterType;
   onBack: () => void;
@@ -424,6 +424,74 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
     }
   };
 
+  const getRawImageBase64 = async (url?: string): Promise<string | null> => {
+    if (!url || !url.startsWith('local:')) return null;
+    const imageId = url.replace('local:', '');
+    try {
+      if (session.key) {
+        const record = await db.encrypted_images.get(imageId);
+        if (record) {
+          const decryptedBytes = await window.crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: hexToBuf(record.ivHex) as any },
+            session.key,
+            hexToBuf(record.ciphertextHex) as any
+          );
+          const uint8 = new Uint8Array(decryptedBytes);
+          let binary = '';
+          for (let i = 0; i < uint8.length; i++) {
+            binary += String.fromCharCode(uint8[i]);
+          }
+          const mime = imageId.startsWith('portrait') ? 'image/jpeg' : 'image/png';
+          return `data:${mime};base64,${btoa(binary)}`;
+        }
+      } else {
+        const record = await db.images.get(imageId);
+        if (record && record.blob) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(record.blob);
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to export image:', err);
+    }
+    return null;
+  };
+
+  const handleExportClick = async () => {
+    try {
+      const portraitBase64 = await getRawImageBase64(character.portraitUrl);
+      const tokenBase64 = await getRawImageBase64(character.tokenUrl);
+
+      const exportData = {
+        version: 1,
+        character: {
+          ...character,
+          id: undefined
+        },
+        portraitImage: portraitBase64,
+        tokenImage: tokenBase64
+      };
+
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${character.name.toLowerCase().replace(/\s+/g, '-')}.dndchar`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to export character:", err);
+      alert("Failed to export character.");
+    }
+  };
+
   const updateResource = async (key: string, value: any) => {
     const updated = {
       ...character,
@@ -621,6 +689,13 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
                 <Share2 size={16} /> Share
               </>
             )}
+          </button>
+          <button 
+            onClick={handleExportClick}
+            className="text-dnd-gold hover:text-ink flex items-center gap-1 font-bold uppercase text-xs cursor-pointer"
+            title="Download character file"
+          >
+            <Download size={16} /> Export
           </button>
           {!isSharedReadOnly && (
             <button 
