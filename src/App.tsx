@@ -38,17 +38,19 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const sharePayload = params.get('share');
     if (sharePayload) {
-      try {
-        const sharedChar = decodeShareData(sharePayload);
-        setSelectedCharacter(sharedChar);
-        setIsSharedMode(true);
-        setView('sheet');
-      } catch (err) {
-        console.error("Failed to decode shared character:", err);
-        alert("Invalid or corrupted share link.");
-        // Clean URL parameter
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
+      (async () => {
+        try {
+          const sharedChar = await decodeShareData(sharePayload);
+          setSelectedCharacter(sharedChar);
+          setIsSharedMode(true);
+          setView('sheet');
+        } catch (err) {
+          console.error("Failed to decode shared character:", err);
+          alert("Invalid or corrupted share link.");
+          // Clean URL parameter
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      })();
     }
   }, []);
 

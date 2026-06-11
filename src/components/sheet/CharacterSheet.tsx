@@ -224,9 +224,9 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
 
   const [shareSuccess, setShareSuccess] = useState(false);
 
-  const handleShareClick = () => {
+  const handleShareClick = async () => {
     try {
-      const payload = encodeShareData(character);
+      const payload = await encodeShareData(character);
       const shareUrl = `${window.location.origin}${window.location.pathname}?share=${payload}`;
       navigator.clipboard.writeText(shareUrl);
       setShareSuccess(true);

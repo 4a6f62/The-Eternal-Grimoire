@@ -189,20 +189,39 @@ export const session: SessionState = {
   key: null
 };
 
-// URL-safe base64 encoding for public character sharing
-export function encodeShareData(data: any): string {
+// URL-safe base64 encoding with deflate compression for public character sharing
+export async function encodeShareData(data: any): Promise<string> {
   const jsonStr = JSON.stringify(data);
-  const base64 = btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (_, p1) => {
-    return String.fromCharCode(parseInt(p1, 16));
-  }));
-  return encodeURIComponent(base64);
+  const bytes = new TextEncoder().encode(jsonStr);
+  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'));
+  const buffer = await new Response(stream).arrayBuffer();
+  const compBytes = new Uint8Array(buffer);
+  
+  let binary = '';
+  for (let i = 0; i < compBytes.length; i++) {
+    binary += String.fromCharCode(compBytes[i]);
+  }
+  const base64 = btoa(binary);
+  
+  // Make it URL-safe base64: replace +, / and remove = padding
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-// URL-safe base64 decoding for public character sharing
-export function decodeShareData(payload: string): any {
-  const base64 = decodeURIComponent(payload);
-  const jsonStr = decodeURIComponent(atob(base64).split('').map((c) => {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
+// URL-safe base64 decoding with deflate decompression for public character sharing
+export async function decodeShareData(payload: string): Promise<any> {
+  // Restore standard base64 from URL-safe base64
+  let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+  const jsonStr = await new Response(stream).text();
   return JSON.parse(jsonStr);
 }
