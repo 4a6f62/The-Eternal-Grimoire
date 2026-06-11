@@ -163,7 +163,9 @@ export function importFromFoundry(json: any): { character: Partial<CharacterType
     languages: ['Common'],
     alignment: 'True Neutral',
     size: 'Medium',
-    ruleset: '2014'
+    ruleset: '2014',
+    resources: {},
+    proficiencies: []
   };
 
   const sys = json.system || {};
@@ -284,7 +286,9 @@ export function importFromRoll20(json: any): { character: Partial<CharacterType>
     languages: ['Common'],
     alignment: 'True Neutral',
     size: 'Medium',
-    ruleset: '2014'
+    ruleset: '2014',
+    resources: {},
+    proficiencies: []
   };
 
   const attribs = Array.isArray(json.attribs) ? json.attribs : [];
