@@ -499,15 +499,16 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
       let data: any;
       let filename: string;
       
+      let jsonStr: string;
       if (vttType === 'foundry') {
         data = exportToFoundry(character);
         filename = `${character.name.toLowerCase().replace(/\s+/g, '-')}-foundry.json`;
+        jsonStr = JSON.stringify(data, null, 2);
       } else {
-        data = exportToRoll20(character);
+        data = await exportToRoll20(character);
         filename = `${character.name.toLowerCase().replace(/\s+/g, '-')}-roll20.json`;
+        jsonStr = JSON.stringify(data);
       }
-      
-      const jsonStr = JSON.stringify(data, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -749,6 +750,14 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
                 >
                   Roll20 Character (.json)
                 </button>
+                <a 
+                  href="/roll20-mod.js" 
+                  download="dndchars-roll20-mod.js"
+                  onClick={() => setShowExportMenu(false)}
+                  className="w-full px-4 py-2 hover:bg-dnd-gold hover:text-white transition-all text-left text-ink font-bold block cursor-pointer border-t border-border-sepia/50"
+                >
+                  Roll20 API Script (.js)
+                </a>
               </div>
             )}
           </div>

@@ -70,7 +70,7 @@ export const CharacterSchema = z.object({
         charisma: z.number().default(0),
       }).optional(),
     })).optional(),
-  }).catchall(z.any()),
+  }).catchall(z.any()).default({}),
   lastModified: z.number(),
 });
 
