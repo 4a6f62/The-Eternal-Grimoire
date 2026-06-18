@@ -217,6 +217,12 @@ export async function exportToRoll20(character: CharacterType): Promise<any> {
     { name: 'level', current: totalLevel },
     { name: 'pb', current: pb },
     { name: 'pb_type', current: '0' },
+    { name: 'wtype', current: '' },
+    { name: 'rtype', current: '{{query=1}} {{normal=1}} {{r2=[[1d20' },
+    { name: 'd20', current: '1d20' },
+    { name: 'charname_output', current: '{{charname=@{character_name}}}' },
+    { name: 'global_attack_mod', current: '0' },
+    { name: 'global_damage_mod_type', current: '' },
 
     // Charactermancer prevention
     { name: 'l1mancer_status', current: 'completed' },
