@@ -479,7 +479,7 @@ export async function exportToRoll20(character: CharacterType): Promise<any> {
     if (item.weight !== undefined) {
       attribs.push({ name: `repeating_inventory_${rowId}_itemweight`, current: item.weight });
     }
-    attribs.push({ name: `repeating_inventory_${rowId}_equipped`, current: 1 });
+    attribs.push({ name: `repeating_inventory_${rowId}_itemequipped`, current: 1 });
 
     const weaponInfo = WEAPON_DATA[nameLower] || (item.type === 'weapon' ? { dmg: '1d4', type: 'slashing', prop: [] } : null);
 
@@ -645,23 +645,90 @@ export async function exportToRoll20(character: CharacterType): Promise<any> {
     attribs.push({ name: `${spellKey}_details-flag`, current: 0 });
     attribs.push({ name: `${spellKey}_options-flag`, current: 0 });
 
+    // Spell attack & damage attributes
+    let spellattack = 'None';
+    let spelldamage = '';
+    let spelldamagetype = '';
+    let spellhealing = '';
+    let spellsave = '';
+    
+    const descLower = (spell.desc || '').toLowerCase();
+    const nameLower = (spell.name || '').toLowerCase();
+
+    // 1. Detect attack roll requirement
+    if (descLower.includes('spell attack') || nameLower.includes('bolt') || nameLower.includes('blast') || nameLower.includes('missile') || nameLower.includes('ray')) {
+      spellattack = 'Attack';
+    }
+
+    // 2. Detect saving throw
+    const saveMatch = descLower.match(/\b(strength|dexterity|constitution|intelligence|wisdom|charisma)\s+saving\s+throw\b/);
+    if (saveMatch) {
+      spellsave = saveMatch[1].charAt(0).toUpperCase() + saveMatch[1].slice(1);
+    }
+
+    // 3. Detect damage or healing formula (e.g. 1d10, 2d6, etc.)
+    const dmgMatch = descLower.match(/\b(\d+d\d+(?:\s*\+\s*\d+)?)\b/);
+    if (dmgMatch) {
+      if (descLower.includes('regain') || descLower.includes('heal') || nameLower.includes('cure')) {
+        spellhealing = dmgMatch[1];
+      } else {
+        spelldamage = dmgMatch[1];
+      }
+    }
+
+    // 4. Detect damage type
+    const damageTypes = ['fire', 'cold', 'acid', 'lightning', 'thunder', 'necrotic', 'radiant', 'force', 'poison', 'psychic', 'slashing', 'piercing', 'bludgeoning'];
+    for (const type of damageTypes) {
+      if (descLower.includes(type)) {
+        spelldamagetype = type.charAt(0).toUpperCase() + type.slice(1);
+        break;
+      }
+    }
+
+    attribs.push({ name: `${spellKey}_spellattack`, current: spellattack });
+    if (spelldamage) attribs.push({ name: `${spellKey}_spelldamage`, current: spelldamage });
+    if (spelldamagetype) attribs.push({ name: `${spellKey}_spelldamagetype`, current: spelldamagetype });
+    if (spellhealing) attribs.push({ name: `${spellKey}_spellhealing`, current: spellhealing });
+    if (spellsave) {
+      attribs.push({ name: `${spellKey}_spellsave`, current: spellsave });
+    }
+
     // Output formatting heuristic
     let spelloutput = 'SPELLCARD';
-    const textToSearch = ((spell.name || '') + ' ' + (spell.desc || '')).toLowerCase();
-    if (lvl > 0 && (
-      textToSearch.includes('damage') ||
-      textToSearch.includes('heal') ||
-      textToSearch.includes('wounds') ||
-      textToSearch.includes('smite') ||
-      textToSearch.includes('restore') ||
-      textToSearch.includes('blast') ||
-      textToSearch.includes('bolt') ||
-      textToSearch.includes('missile')
-    )) {
+    if (spellattack === 'Attack' || spelldamage || spellhealing || spellsave) {
       spelloutput = 'ATTACK';
     }
     attribs.push({ name: `${spellKey}_spelloutput`, current: spelloutput });
   }
+
+  // Export Traits/Features to repeating_traits
+  character.traits?.forEach((trait) => {
+    const rowId = generateRowId();
+    const name = typeof trait === 'string' ? trait : trait.name;
+    const desc = typeof trait === 'string' ? '' : (trait.desc || '');
+    const source = typeof trait === 'string' ? 'Race' : (trait.source || 'Class');
+
+    attribs.push({ name: `repeating_traits_${rowId}_name`, current: name });
+    attribs.push({ name: `repeating_traits_${rowId}_description`, current: desc });
+    attribs.push({ name: `repeating_traits_${rowId}_source`, current: source });
+    attribs.push({ name: `repeating_traits_${rowId}_source_type`, current: source });
+    attribs.push({ name: `repeating_traits_${rowId}_options-flag`, current: '0' });
+  });
+
+  // Export Feats to repeating_traits
+  character.feats?.forEach((feat) => {
+    if (!feat) return;
+    const rowId = generateRowId();
+    const name = typeof feat === 'string' ? feat : feat.name;
+    const desc = typeof feat === 'string' ? '' : (feat.desc || '');
+    const source = typeof feat === 'string' ? 'Feat' : (feat.source || 'Feat');
+
+    attribs.push({ name: `repeating_traits_${rowId}_name`, current: name });
+    attribs.push({ name: `repeating_traits_${rowId}_description`, current: desc });
+    attribs.push({ name: `repeating_traits_${rowId}_source`, current: source });
+    attribs.push({ name: `repeating_traits_${rowId}_source_type`, current: source });
+    attribs.push({ name: `repeating_traits_${rowId}_options-flag`, current: '0' });
+  });
 
   return {
     schema_version: 3,
