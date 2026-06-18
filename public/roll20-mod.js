@@ -27,7 +27,7 @@
 var DnDCharsIntegration = DnDCharsIntegration || (function() {
     'use strict';
 
-    var version = '1.0.0';
+    var version = '1.1.0';
 
     // Helper to log with styling
     function logMsg(message) {
