@@ -224,6 +224,12 @@ var DnDCharsIntegration = DnDCharsIntegration || (function() {
                     setOrCreateAttr(charId, 'class_and_level', classNames.join(' / '));
                     setOrCreateAttr(charId, 'level', totalLevel);
                     setOrCreateAttr(charId, 'pb', getProficiencyBonus(totalLevel));
+                    setOrCreateAttr(charId, 'wtype', '');
+                    setOrCreateAttr(charId, 'rtype', '{{query=1}} {{normal=1}} {{r2=[[1d20');
+                    setOrCreateAttr(charId, 'd20', '1d20');
+                    setOrCreateAttr(charId, 'charname_output', '{{charname=@{character_name}}}');
+                    setOrCreateAttr(charId, 'global_attack_mod', '0');
+                    setOrCreateAttr(charId, 'global_damage_mod_type', '');
                 }
 
                 // 4. Languages
