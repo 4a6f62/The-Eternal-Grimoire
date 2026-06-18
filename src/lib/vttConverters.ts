@@ -226,8 +226,8 @@ export async function exportToRoll20(character: CharacterType): Promise<any> {
 
     // Charactermancer prevention
     { name: 'l1mancer_status', current: 'completed' },
-    { name: 'charactermancer_step', current: '' },
-    { name: 'lpmancer_status', current: '' },
+    { name: 'charactermancer_step', current: '{}' },
+    { name: 'lpmancer_status', current: '{}' },
     { name: 'mancer_confirm', current: 'on' },
     { name: 'showleveler', current: 0 },
   ];
