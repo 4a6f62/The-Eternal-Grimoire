@@ -751,7 +751,7 @@ export function CharacterSheet({ character, onBack, onEdit, isSharedReadOnly = f
                   Roll20 Character (.json)
                 </button>
                 <a 
-                  href="/roll20-mod.js" 
+                  href="./roll20-mod.js" 
                   download="dndchars-roll20-mod.js"
                   onClick={() => setShowExportMenu(false)}
                   className="w-full px-4 py-2 hover:bg-dnd-gold hover:text-white transition-all text-left text-ink font-bold block cursor-pointer border-t border-border-sepia/50"
