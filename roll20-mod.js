@@ -273,7 +273,7 @@ var DnDCharsIntegration = DnDCharsIntegration || (function() {
                         if (item.weight !== undefined) {
                             setOrCreateAttr(charId, 'repeating_inventory_' + rowId + '_itemweight', item.weight);
                         }
-                        setOrCreateAttr(charId, 'repeating_inventory_' + rowId + '_equipped', 1);
+                        setOrCreateAttr(charId, 'repeating_inventory_' + rowId + '_itemequipped', 1);
                     });
                 }
 
@@ -287,7 +287,93 @@ var DnDCharsIntegration = DnDCharsIntegration || (function() {
                         setOrCreateAttr(charId, prefix + rowId + '_spellname', spell.name);
                         if (spell.desc) {
                             setOrCreateAttr(charId, prefix + rowId + '_spelldescription', spell.desc);
+                            
+                            // Parse spell actions
+                            var spellattack = 'None';
+                            var spelldamage = '';
+                            var spelldamagetype = '';
+                            var spellhealing = '';
+                            var spellsave = '';
+                            
+                            var descLower = spell.desc.toLowerCase();
+                            var nameLower = (spell.name || '').toLowerCase();
+                            
+                            // 1. Detect attack roll
+                            if (descLower.indexOf('spell attack') !== -1 || nameLower.indexOf('bolt') !== -1 || nameLower.indexOf('blast') !== -1 || nameLower.indexOf('missile') !== -1 || nameLower.indexOf('ray') !== -1) {
+                                spellattack = 'Attack';
+                            }
+                            
+                            // 2. Detect save
+                            var saveMatch = descLower.match(/\b(strength|dexterity|constitution|intelligence|wisdom|charisma)\s+saving\s+throw\b/);
+                            if (saveMatch) {
+                                spellsave = saveMatch[1].charAt(0).toUpperCase() + saveMatch[1].slice(1);
+                            }
+                            
+                            // 3. Detect damage or heal formula
+                            var dmgMatch = descLower.match(/\b(\d+d\d+(?:\s*\+\s*\d+)?)\b/);
+                            if (dmgMatch) {
+                                if (descLower.indexOf('regain') !== -1 || descLower.indexOf('heal') !== -1 || nameLower.indexOf('cure') !== -1) {
+                                    spellhealing = dmgMatch[1];
+                                } else {
+                                    spelldamage = dmgMatch[1];
+                                }
+                            }
+                            
+                            // 4. Detect damage type
+                            var damageTypes = ['fire', 'cold', 'acid', 'lightning', 'thunder', 'necrotic', 'radiant', 'force', 'poison', 'psychic', 'slashing', 'piercing', 'bludgeoning'];
+                            for (var i = 0; i < damageTypes.length; i++) {
+                                var type = damageTypes[i];
+                                if (descLower.indexOf(type) !== -1) {
+                                    spelldamagetype = type.charAt(0).toUpperCase() + type.slice(1);
+                                    break;
+                                }
+                            }
+                            
+                            setOrCreateAttr(charId, prefix + rowId + '_spellattack', spellattack);
+                            if (spelldamage) setOrCreateAttr(charId, prefix + rowId + '_spelldamage', spelldamage);
+                            if (spelldamagetype) setOrCreateAttr(charId, prefix + rowId + '_spelldamagetype', spelldamagetype);
+                            if (spellhealing) setOrCreateAttr(charId, prefix + rowId + '_spellhealing', spellhealing);
+                            if (spellsave) setOrCreateAttr(charId, prefix + rowId + '_spellsave', spellsave);
+                            
+                            var spelloutput = 'SPELLCARD';
+                            if (spellattack === 'Attack' || spelldamage || spellhealing || spellsave) {
+                                spelloutput = 'ATTACK';
+                            }
+                            setOrCreateAttr(charId, prefix + rowId + '_spelloutput', spelloutput);
                         }
+                    });
+                }
+
+                // 7. Traits & Features (repeating_traits)
+                if (data.traits && Array.isArray(data.traits)) {
+                    _.each(data.traits, function(trait) {
+                        var rowId = generateRowId();
+                        var name = typeof trait === 'string' ? trait : trait.name;
+                        var desc = typeof trait === 'string' ? '' : (trait.desc || '');
+                        var source = typeof trait === 'string' ? 'Race' : (trait.source || 'Class');
+
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_name', name);
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_description', desc);
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_source', source);
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_source_type', source);
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_options-flag', '0');
+                    });
+                }
+
+                // 8. Feats (repeating_traits)
+                if (data.feats && Array.isArray(data.feats)) {
+                    _.each(data.feats, function(feat) {
+                        if (!feat) return;
+                        var rowId = generateRowId();
+                        var name = typeof feat === 'string' ? feat : feat.name;
+                        var desc = typeof feat === 'string' ? '' : (feat.desc || '');
+                        var source = typeof feat === 'string' ? 'Feat' : (feat.source || 'Feat');
+
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_name', name);
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_description', desc);
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_source', source);
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_source_type', source);
+                        setOrCreateAttr(charId, 'repeating_traits_' + rowId + '_options-flag', '0');
                     });
                 }
             } else {
