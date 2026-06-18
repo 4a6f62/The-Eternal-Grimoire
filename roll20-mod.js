@@ -170,24 +170,59 @@ var DnDCharsIntegration = DnDCharsIntegration || (function() {
             // Handle Roll20 Export Format
             if (data.attribs && Array.isArray(data.attribs)) {
                 sendFeedback('⚙️ Importing Roll20-format character attributes...', sender);
+                
+                // Prioritize core attributes to prevent sheet workers from throwing missing-dependency warnings
+                var coreNames = ['pb', 'wtype', 'rtype', 'd20', 'charname_output', 'strength_mod', 'dexterity_mod', 'constitution_mod', 'intelligence_mod', 'wisdom_mod', 'charisma_mod'];
+                var coreAttribs = [];
+                var otherAttribs = [];
+                
                 _.each(data.attribs, function(attr) {
                     if (attr && attr.name) {
-                        setOrCreateAttr(charId, attr.name, attr.current, attr.max);
+                        if (coreNames.indexOf(attr.name) !== -1) {
+                            coreAttribs.push(attr);
+                        } else {
+                            otherAttribs.push(attr);
+                        }
                     }
+                });
+
+                // Create core attributes first
+                _.each(coreAttribs, function(attr) {
+                    setOrCreateAttr(charId, attr.name, attr.current, attr.max);
+                });
+                
+                // Create the rest of the attributes
+                _.each(otherAttribs, function(attr) {
+                    setOrCreateAttr(charId, attr.name, attr.current, attr.max);
                 });
             } 
             // Handle Native Character Format
             else if (data.stats) {
                 sendFeedback('⚙️ Importing native character data, mapping D&D 5e attributes...', sender);
                 
-                // 1. Stats
-                var stats = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
+                // Pre-calculate total level and proficiency bonus
                 var totalLevel = 0;
+                if (data.classes && Array.isArray(data.classes)) {
+                    _.each(data.classes, function(cls) {
+                        totalLevel += parseInt(cls.level, 10) || 1;
+                    });
+                }
+                if (totalLevel === 0) totalLevel = 1;
+                var pbVal = getProficiencyBonus(totalLevel);
 
+                // Set core sheet config attributes first to satisfy workers
+                setOrCreateAttr(charId, 'pb', pbVal);
+                setOrCreateAttr(charId, 'wtype', '');
+                setOrCreateAttr(charId, 'rtype', '{{query=1}} {{normal=1}} {{r2=[[1d20');
+                setOrCreateAttr(charId, 'd20', '1d20');
+                setOrCreateAttr(charId, 'charname_output', '{{charname=@{character_name}}}');
+                setOrCreateAttr(charId, 'global_attack_mod', '0');
+                setOrCreateAttr(charId, 'global_damage_mod_type', '');
+
+                // 1. Stats and modifiers (set modifiers early)
+                var stats = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
                 _.each(stats, function(stat) {
                     var score = data.stats[stat] || 10;
-                    var shortName = stat.substring(0, 3);
-                    
                     setOrCreateAttr(charId, stat, score);
                     setOrCreateAttr(charId, stat + '_base', score);
                     setOrCreateAttr(charId, stat + '_mod', getModifier(score));
@@ -211,7 +246,6 @@ var DnDCharsIntegration = DnDCharsIntegration || (function() {
                     _.each(data.classes, function(cls, idx) {
                         var num = idx + 1;
                         var levelVal = parseInt(cls.level, 10) || 1;
-                        totalLevel += levelVal;
 
                         setOrCreateAttr(charId, 'class_' + num, cls.name);
                         setOrCreateAttr(charId, 'level_' + num, levelVal);
@@ -223,13 +257,6 @@ var DnDCharsIntegration = DnDCharsIntegration || (function() {
 
                     setOrCreateAttr(charId, 'class_and_level', classNames.join(' / '));
                     setOrCreateAttr(charId, 'level', totalLevel);
-                    setOrCreateAttr(charId, 'pb', getProficiencyBonus(totalLevel));
-                    setOrCreateAttr(charId, 'wtype', '');
-                    setOrCreateAttr(charId, 'rtype', '{{query=1}} {{normal=1}} {{r2=[[1d20');
-                    setOrCreateAttr(charId, 'd20', '1d20');
-                    setOrCreateAttr(charId, 'charname_output', '{{charname=@{character_name}}}');
-                    setOrCreateAttr(charId, 'global_attack_mod', '0');
-                    setOrCreateAttr(charId, 'global_damage_mod_type', '');
                 }
 
                 // 4. Languages
