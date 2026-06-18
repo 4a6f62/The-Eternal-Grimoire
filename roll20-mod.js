@@ -297,8 +297,8 @@ var DnDCharsIntegration = DnDCharsIntegration || (function() {
 
             // Prevent Charactermancer from triggering when opening the sheet
             setOrCreateAttr(charId, 'l1mancer_status', 'completed');
-            setOrCreateAttr(charId, 'charactermancer_step', '');
-            setOrCreateAttr(charId, 'lpmancer_status', '');
+            setOrCreateAttr(charId, 'charactermancer_step', '{}');
+            setOrCreateAttr(charId, 'lpmancer_status', '{}');
             setOrCreateAttr(charId, 'mancer_confirm', 'on');
 
             var statusText = isNew ? 'created' : 'updated';
